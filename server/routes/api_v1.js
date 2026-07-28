@@ -431,11 +431,11 @@ router.post('/users/login', async (req, res, next) => {
     const user = users[id];
 
     if (!user) {
-      return next(new AppError('Authentication failed: Invalid identity handle', 401));
+      return next(new AppError('Invalid identity handle', 401));
     }
 
     if (user.password !== password) {
-      return next(new AppError('Authentication failed: Invalid password credential', 401));
+      return next(new AppError('Invalid password credential', 401));
     }
 
     // Log login audit trail
