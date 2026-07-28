@@ -156,6 +156,12 @@ async function apiRequest(endpoint, options = {}) {
     
     if (!response.ok) {
       logToLedger('err', `[API Error Response] Status ${response.status} - ${resData.message || 'Operation failed'}`);
+      if (response.status === 401) {
+        localStorage.removeItem('aura_session');
+        setTimeout(() => {
+          initSession();
+        }, 100);
+      }
       throw new Error(resData.message || 'Operation failed');
     }
     
