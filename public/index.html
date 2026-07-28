@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AURA | Fluid Marketplace</title>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Styling -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- Background Ambient Lights -->
+  <div class="ambient-glow glow-1"></div>
+  <div class="ambient-glow glow-2"></div>
+
+  <!-- Header / Navigation Bar -->
+  <header class="main-header">
+    <div class="logo">
+      <span class="logo-txt">AURA</span>
+      <span class="logo-sub">Marketplace</span>
+    </div>
+    
+    <div class="navbar-actions">
+      <!-- Persona Swapper -->
+      <div class="persona-selector">
+        <label for="persona-select"><i class="fa-solid fa-user-gear"></i> Persona:</label>
+        <select id="persona-select">
+          <option value="u-1">Alpha Buyer ($50,000.00)</option>
+          <option value="u-2">Premium Merchant ($1,000.00)</option>
+        </select>
+      </div>
+
+      <!-- Legal Policy Buttons -->
+      <button class="btn btn-secondary btn-sm" onclick="openPolicy('TOS')"><i class="fa-solid fa-file-contract"></i> Policies</button>
+      
+      <!-- Cart Trigger -->
+      <button class="cart-trigger" onclick="toggleCart(true)">
+        <i class="fa-solid fa-bag-shopping"></i>
+        <span class="cart-badge" id="cart-badge-count">0</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Viewport Switcher -->
+  <div class="view-tabs">
+    <button class="view-tab active" id="tab-buyer" onclick="switchView('buyer')"><i class="fa-solid fa-store"></i> Buyer Storefront</button>
+    <button class="view-tab" id="tab-merchant" onclick="switchView('merchant')"><i class="fa-solid fa-chart-line"></i> Merchant Panel</button>
+  </div>
+
+  <!-- Main Container -->
+  <main class="app-container">
+    
+    <!-- ==================== BUYER STOREFRONT VIEW ==================== -->
+    <section id="buyer-view" class="view-section active">
+      <!-- Search & Filters Bar -->
+      <div class="discovery-bar">
+        <div class="search-input-wrapper">
+          <i class="fa-solid fa-magnifying-glass search-icon"></i>
+          <input type="text" id="search-input" placeholder="Search the future..." oninput="handleSearch()">
+          <button class="clear-search" id="clear-search-btn" onclick="clearSearch()" style="display:none;"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="category-filters">
+          <button class="cat-filter active" onclick="filterCategory('All')">All</button>
+          <button class="cat-filter" onclick="filterCategory('Electronics')">Electronics</button>
+          <button class="cat-filter" onclick="filterCategory('Office')">Office</button>
+          <button class="cat-filter" onclick="filterCategory('Furniture')">Furniture</button>
+        </div>
+      </div>
+
+      <!-- Products Grid -->
+      <div class="products-grid" id="products-grid">
+        <!-- Rendered dynamically -->
+      </div>
+    </section>
+
+    <!-- ==================== MERCHANT PORTAL VIEW ==================== -->
+    <section id="merchant-view" class="view-section">
+      <div class="merchant-dashboard-grid">
+        <!-- Analytics & SVG Graph -->
+        <div class="card analytics-card">
+          <h3><i class="fa-solid fa-wallet"></i> Wallet Summary</h3>
+          <div class="wallet-balance-row">
+            <div class="balance-item">
+              <span class="lbl">Merchant Balance</span>
+              <span class="val" id="merchant-wallet-val">$1,000.00</span>
+            </div>
+            <div class="balance-item">
+              <span class="lbl">Total Escrow Volume</span>
+              <span class="val" id="merchant-escrow-val">$0.00</span>
+            </div>
+          </div>
+          
+          <div class="svg-graph-container">
+            <h4>Real-time Sales Activity</h4>
+            <svg class="sales-chart" viewBox="0 0 500 150">
+              <defs>
+                <linearGradient id="chart-grad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="var(--accent)" stop-opacity="0.4"/>
+                  <stop offset="100%" stop-color="var(--accent)" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+              <path class="chart-area" d="M 0 150 L 0 120 L 100 110 L 200 70 L 300 90 L 400 40 L 500 20 L 500 150 Z" fill="url(#chart-grad)"></path>
+              <path class="chart-line" d="M 0 120 Q 50 115 100 110 T 200 70 T 300 90 T 400 40 T 500 20" fill="none" stroke="var(--accent)" stroke-width="3"></path>
+              <circle cx="100" cy="110" r="4" fill="var(--bg)" stroke="var(--accent)" stroke-width="2"></circle>
+              <circle cx="200" cy="70" r="4" fill="var(--bg)" stroke="var(--accent)" stroke-width="2"></circle>
+              <circle cx="300" cy="90" r="4" fill="var(--bg)" stroke="var(--accent)" stroke-width="2"></circle>
+              <circle cx="400" cy="40" r="4" fill="var(--bg)" stroke="var(--accent)" stroke-width="2"></circle>
+              <circle cx="500" cy="20" r="4" fill="var(--bg)" stroke="var(--accent)" stroke-width="2"></circle>
+            </svg>
+          </div>
+        </div>
+
+        <!-- Add Product Form -->
+        <div class="card add-product-card">
+          <h3><i class="fa-solid fa-circle-plus"></i> List New Product</h3>
+          <form id="add-product-form" onsubmit="handleAddProduct(event)">
+            <div class="form-group">
+              <label for="prod-name">Product Name</label>
+              <input type="text" id="prod-name" placeholder="e.g. Mechanical Linear Keyboard" required>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="prod-category">Category</label>
+                <select id="prod-category">
+                  <option value="Electronics">Electronics</option>
+                  <option value="Office">Office</option>
+                  <option value="Furniture">Furniture</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="prod-price">Price ($)</label>
+                <input type="number" id="prod-price" min="1" step="0.01" placeholder="299.00" required>
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="prod-stock">Initial Stock Quantity</label>
+              <input type="number" id="prod-stock" min="1" placeholder="10" required>
+            </div>
+            <button type="submit" class="btn btn-primary btn-block"><i class="fa-solid fa-paper-plane"></i> Publish to Catalog</button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Merchant Active Orders / Shipments -->
+      <div class="card orders-card">
+        <h3><i class="fa-solid fa-truck-ramp-box"></i> Order Escrow Management</h3>
+        <div class="orders-table-wrapper">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Order ID</th>
+                <th>Product</th>
+                <th>Qty</th>
+                <th>Total Value</th>
+                <th>Net Payout</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="merchant-orders-body">
+              <!-- Rendered dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ==================== SYSTEM MONITOR LEDGER (AUDIT STREAM) ==================== -->
+  <footer class="system-monitor-ledger">
+    <div class="ledger-header">
+      <div class="title"><i class="fa-solid fa-terminal"></i> AURA Architecture Ledger (Real-time Audit Stream)</div>
+      <div class="controls">
+        <button class="btn btn-text btn-sm" onclick="clearLedger()"><i class="fa-solid fa-trash-can"></i> Clear</button>
+      </div>
+    </div>
+    <div class="ledger-logs" id="ledger-logs-stream">
+      <div class="log-row sys-log">[System] Client dashboard connected to AURA Local Broker...</div>
+    </div>
+  </footer>
+
+  <!-- ==================== CART SLIDE-OUT PANEL ==================== -->
+  <div class="cart-overlay" id="cart-overlay" onclick="toggleCart(false)"></div>
+  <aside class="cart-drawer" id="cart-drawer">
+    <div class="drawer-header">
+      <h3>Shopping Bag</h3>
+      <button class="close-btn" onclick="toggleCart(false)"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+
+    <!-- Step Tracker for Checkout -->
+    <div class="checkout-steps" id="checkout-steps-bar" style="display:none;">
+      <div class="step active" id="step-1-indicator">1. Detail</div>
+      <div class="step" id="step-2-indicator">2. Payment</div>
+      <div class="step" id="step-3-indicator">3. Confirm</div>
+    </div>
+
+    <div class="drawer-content">
+      <!-- Step 1: Cart Items -->
+      <div class="cart-step-panel active" id="cart-step-1">
+        <div class="cart-items-list" id="cart-items-list">
+          <!-- Cart items injected here -->
+        </div>
+        
+        <div class="cart-summary">
+          <div class="summary-row">
+            <span>Subtotal:</span>
+            <span id="cart-subtotal-val">$0.00</span>
+          </div>
+          <div class="summary-row promo">
+            <span>Processing fee (Included):</span>
+            <span>5%</span>
+          </div>
+          <button class="btn btn-primary btn-block btn-lg" onclick="checkoutGoToStep(2)" id="checkout-next-btn" disabled>
+            Proceed to Checkout <i class="fa-solid fa-arrow-right-long"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Step 2: Payment Details (Simulating Secure Token Collection) -->
+      <div class="cart-step-panel" id="cart-step-2">
+        <div class="secure-checkout-form">
+          <h4><i class="fa-solid fa-lock"></i> Escrow Secure Checkout</h4>
+          <p class="form-desc">Card transaction tokens are encrypted and passed directly to payment gateways.</p>
+          
+          <div class="form-group">
+            <label>Cardholder Name</label>
+            <input type="text" id="card-holder" placeholder="John Doe" value="Alpha Buyer">
+          </div>
+          <div class="form-group">
+            <label>Card Number</label>
+            <div class="fake-stripe-input">
+              <i class="fa-regular fa-credit-card"></i>
+              <input type="text" id="card-num" placeholder="4242 •••• •••• 4242" value="4242 4242 4242 4242">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Expiration</label>
+              <input type="text" placeholder="MM/YY" value="12/28">
+            </div>
+            <div class="form-group">
+              <label>CVC</label>
+              <input type="password" placeholder="•••" value="123">
+            </div>
+          </div>
+
+          <div class="checkout-summary-box">
+            <div class="summary-row">
+              <span>Total Payable:</span>
+              <strong id="payable-amount-val">$0.00</strong>
+            </div>
+          </div>
+
+          <div class="button-row">
+            <button class="btn btn-secondary" onclick="checkoutGoToStep(1)"><i class="fa-solid fa-arrow-left"></i> Back</button>
+            <button class="btn btn-primary" onclick="submitSecureCheckout()">Place Order <i class="fa-solid fa-shield-halved"></i></button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 3: Payment Lock Spinner & Confirmation -->
+      <div class="cart-step-panel" id="cart-step-3">
+        <div class="checkout-validation" id="checkout-spinner-pane">
+          <div class="spinner-ring"></div>
+          <h4>Securing Inventory Transaction...</h4>
+          <p>Acquiring database row locks, checking version index & reserving stock assets.</p>
+        </div>
+        
+        <div class="checkout-success" id="checkout-success-pane" style="display:none;">
+          <div class="success-icon"><i class="fa-solid fa-circle-check"></i></div>
+          <h3>Transaction Authenticated!</h3>
+          <p>Funds successfully isolated under escrow hold. The merchant has been alerted for logistics dispatch.</p>
+          <div class="order-receipt-card" id="receipt-details">
+            <!-- Receipt details inject -->
+          </div>
+          <button class="btn btn-primary btn-block" onclick="resetCartState()"><i class="fa-solid fa-bag-shopping"></i> Continue Shopping</button>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ==================== LEGAL POLICY MODAL ==================== -->
+  <div class="modal-overlay" id="policy-modal-overlay" onclick="closePolicy()"></div>
+  <div class="policy-modal" id="policy-modal">
+    <div class="modal-header">
+      <h3 id="policy-title">Terms of Service</h3>
+      <button class="close-btn" onclick="closePolicy()"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="policy-tabs">
+      <button class="policy-tab-btn" id="policy-tab-TOS" onclick="fetchPolicy('TOS')">TOS</button>
+      <button class="policy-tab-btn" id="policy-tab-PRIVACY" onclick="fetchPolicy('PRIVACY')">Privacy</button>
+      <button class="policy-tab-btn" id="policy-tab-DPA" onclick="fetchPolicy('DPA')">DPA</button>
+      <button class="policy-tab-btn" id="policy-tab-REFUND" onclick="fetchPolicy('REFUND')">Refund Policy</button>
+      <button class="policy-tab-btn" id="policy-tab-MSA" onclick="fetchPolicy('MSA')">MSA</button>
+    </div>
+    <div class="modal-content text-left" id="policy-content-area">
+      <!-- Injected Policy MD Content -->
+    </div>
+  </div>
+
+  <!-- JavaScript logic -->
+  <script src="app.js"></script>
+</body>
+</html>

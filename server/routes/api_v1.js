@@ -1,0 +1,358 @@
+const express = require('express');
+const router = express.Router();
+const fs = require('fs');
+const path = require('path');
+const db = require('../database');
+const { AppError } = require('../errors');
+const { logAuditAction } = require('../audit');
+
+// 1. Get all products (Active only - Soft Delete filter)
+router.get('/products', async (req, res, next) => {
+  try {
+    const products = await db.findAll('products');
+    res.status(200).json({ status: 'success', results: products.length, data: { products } });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// 2. Create a product (Merchant listings)
+router.post('/products', async (req, res, next) => {
+  try {
+    const { name, category, price, stock, merchantId } = req.body;
+
+    if (!name || !category || price === undefined || stock === undefined || !merchantId) {
+      return next(new AppError('Missing required product parameters: name, category, price, stock, merchantId', 400));
+    }
+
+    const priceNum = parseFloat(price);
+    const stockNum = parseInt(stock, 10);
+
+    if (isNaN(priceNum) || priceNum <= 0) return next(new AppError('Price must be a positive number', 400));
+    if (isNaN(stockNum) || stockNum < 0) return next(new AppError('Stock cannot be negative', 400));
+
+    const newProductId = `p-${Date.now()}`;
+    const productRecord = {
+      id: newProductId,
+      name,
+      category,
+      price: priceNum,
+      stock: stockNum,
+      version: 1,
+      deleted_at: null,
+      merchant_id: merchantId
+    };
+
+    // Execute atomic write transaction
+    await db.executeTransaction((state) => {
+      state.products[newProductId] = productRecord;
+    });
+
+    // Record audit trail
+    await logAuditAction({
+      actor: merchantId,
+      action: 'PRODUCT_CREATE',
+      entityType: 'product',
+      entityId: newProductId,
+      afterState: productRecord,
+      req
+    });
+
+    res.status(201).json({ status: 'success', data: { product: productRecord } });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// 3. Delete a product (Soft Delete)
+router.delete('/products/:id', async (req, res, next) => {
+  try {
+    const productId = req.params.id;
+    const { merchantId } = req.body; // In real app, resolved from auth context
+
+    if (!merchantId) return next(new AppError('Auth required: merchantId must be provided', 401));
+
+    const product = await db.findById('products', productId);
+    if (!product) return next(new AppError('Product not found or already deleted', 404));
+
+    if (product.merchant_id !== merchantId) {
+      return next(new AppError('Access denied: You do not own this product listing', 403));
+    }
+
+    const beforeState = JSON.parse(JSON.stringify(product));
+    let afterState;
+
+    await db.executeTransaction((state) => {
+      const prod = state.products[productId];
+      prod.deleted_at = new Date().toISOString();
+      afterState = prod;
+    });
+
+    await logAuditAction({
+      actor: merchantId,
+      action: 'PRODUCT_DELETE',
+      entityType: 'product',
+      entityId: productId,
+      beforeState,
+      afterState,
+      req
+    });
+
+    res.status(200).json({ status: 'success', message: 'Product successfully soft-deleted.' });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// 4. Place an order (ACID Transaction with Stock Lock Check)
+router.post('/orders', async (req, res, next) => {
+  try {
+    const { buyerId, productId, quantity, expectedVersion } = req.body;
+
+    if (!buyerId || !productId || !quantity || expectedVersion === undefined) {
+      return next(new AppError('Missing transaction parameters: buyerId, productId, quantity, expectedVersion', 400));
+    }
+
+    const qty = parseInt(quantity, 10);
+    if (isNaN(qty) || qty <= 0) return next(new AppError('Quantity must be a positive integer', 400));
+
+    // Run transaction
+    const transactionResult = await db.executeTransaction(async (state) => {
+      // 1. Fetch user (buyer)
+      const buyer = state.users[buyerId];
+      if (!buyer || buyer.role !== 'buyer') {
+        throw new AppError('Buyer profile not found', 404);
+      }
+
+      // 2. Fetch product
+      const product = state.products[productId];
+      if (!product || product.deleted_at !== null) {
+        throw new AppError('Product is currently unavailable or has been deleted', 404);
+      }
+
+      // 3. Stock Check
+      if (product.stock < qty) {
+        throw new AppError(`Insufficient stock. Requested: ${qty}, Available: ${product.stock}`, 409);
+      }
+
+      // 4. Optimistic Lock Check (Prevent Race Conditions)
+      if (product.version !== expectedVersion) {
+        throw new AppError('Product state has updated since you opened the checkout. Please refresh.', 409);
+      }
+
+      const totalCost = product.price * qty;
+
+      // 5. Balance Check
+      if (buyer.balance < totalCost) {
+        throw new AppError(`Insufficient funds. Total: $${totalCost}, Balance: $${buyer.balance}`, 402);
+      }
+
+      // 6. Perform Mutation updates (ACID Consistency)
+      const oldBuyerState = JSON.parse(JSON.stringify(buyer));
+      const oldProductState = JSON.parse(JSON.stringify(product));
+
+      buyer.balance -= totalCost; // Deduct funds from buyer
+      product.stock -= qty;       // Deduct inventory
+      product.version += 1;       // Version lock increment
+
+      // Generate order record
+      const orderId = `ord-${Date.now()}`;
+      const feeAmount = totalCost * 0.05; // 5% fee
+      const netMerchantPayout = totalCost - feeAmount;
+
+      const orderRecord = {
+        id: orderId,
+        buyer_id: buyerId,
+        product_id: productId,
+        quantity: qty,
+        total_amount: totalCost,
+        fee_collected: feeAmount,
+        net_merchant_payout: netMerchantPayout,
+        merchant_id: product.merchant_id,
+        status: 'PAID', // Escrow holding state
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+
+      state.orders[orderId] = orderRecord;
+
+      return {
+        order: orderRecord,
+        buyerState: { before: oldBuyerState, after: buyer },
+        productState: { before: oldProductState, after: product }
+      };
+    });
+
+    const { order, buyerState, productState } = transactionResult;
+
+    // Log atomic audits
+    await logAuditAction({
+      actor: buyerId,
+      action: 'ORDER_PLACE',
+      entityType: 'order',
+      entityId: order.id,
+      afterState: order,
+      req
+    });
+
+    await logAuditAction({
+      actor: buyerId,
+      action: 'INVENTORY_DEDUCT',
+      entityType: 'product',
+      entityId: productId,
+      beforeState: productState.before,
+      afterState: productState.after,
+      req
+    });
+
+    await logAuditAction({
+      actor: buyerId,
+      action: 'BALANCE_DEDUCT',
+      entityType: 'user',
+      entityId: buyerId,
+      beforeState: buyerState.before,
+      afterState: buyerState.after,
+      req
+    });
+
+    res.status(201).json({ status: 'success', data: { order } });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// 5. Merchant Ship order
+router.post('/orders/:id/ship', async (req, res, next) => {
+  try {
+    const orderId = req.params.id;
+    const { merchantId } = req.body;
+
+    if (!merchantId) return next(new AppError('merchantId must be specified', 400));
+
+    const result = await db.executeTransaction(async (state) => {
+      const order = state.orders[orderId];
+      if (!order) throw new AppError('Order not found', 404);
+      if (order.merchant_id !== merchantId) throw new AppError('Access denied: You are not authorized to dispatch this order', 403);
+      if (order.status !== 'PAID') throw new AppError(`Cannot ship order in current status: ${order.status}`, 400);
+
+      const oldState = JSON.parse(JSON.stringify(order));
+      order.status = 'SHIPPED';
+      order.updated_at = new Date().toISOString();
+
+      return { order, before: oldState };
+    });
+
+    await logAuditAction({
+      actor: merchantId,
+      action: 'ORDER_SHIP',
+      entityType: 'order',
+      entityId: orderId,
+      beforeState: result.before,
+      afterState: result.order,
+      req
+    });
+
+    res.status(200).json({ status: 'success', data: { order: result.order } });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// 6. Carrier/Buyer mark delivered (Escrow payout Release)
+router.post('/orders/:id/deliver', async (req, res, next) => {
+  try {
+    const orderId = req.params.id;
+    const { actorId } = req.body; // Can be carrier API or buyer confirmation
+
+    if (!actorId) return next(new AppError('actorId must be provided', 400));
+
+    const result = await db.executeTransaction(async (state) => {
+      const order = state.orders[orderId];
+      if (!order) throw new AppError('Order not found', 404);
+      if (order.status !== 'SHIPPED') throw new AppError(`Cannot deliver order in current status: ${order.status}`, 400);
+
+      const merchant = state.users[order.merchant_id];
+      if (!merchant) throw new AppError('Merchant associated with order not found', 404);
+
+      const oldOrderState = JSON.parse(JSON.stringify(order));
+      const oldMerchantState = JSON.parse(JSON.stringify(merchant));
+
+      // Release escrow balance to merchant account
+      order.status = 'DELIVERED';
+      order.updated_at = new Date().toISOString();
+
+      merchant.balance += order.net_merchant_payout;
+
+      return { order, merchant, beforeOrder: oldOrderState, beforeMerchant: oldMerchantState };
+    });
+
+    await logAuditAction({
+      actor: actorId,
+      action: 'ORDER_DELIVER',
+      entityType: 'order',
+      entityId: orderId,
+      beforeState: result.beforeOrder,
+      afterState: result.order,
+      req
+    });
+
+    await logAuditAction({
+      actor: 'ESCROW_SYSTEM',
+      action: 'ESCROW_PAYOUT_MERCHANT',
+      entityType: 'user',
+      entityId: result.order.merchant_id,
+      beforeState: result.beforeMerchant,
+      afterState: result.merchant,
+      req
+    });
+
+    res.status(200).json({ status: 'success', data: { order: result.order } });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// 7. Get users data (For sandbox visualization)
+router.get('/users', async (req, res, next) => {
+  try {
+    const data = db.read();
+    res.status(200).json({ status: 'success', data: { users: Object.values(data.users) } });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// 8. Get audit logs list (Admin console)
+router.get('/audit-logs', async (req, res, next) => {
+  try {
+    const data = db.read();
+    // Sort logs descending by timestamp
+    const logs = Object.values(data.audit_logs || {}).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+    res.status(200).json({ status: 'success', data: { logs } });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// 9. Load legal policies dynamically
+router.get('/policies/:policy', async (req, res, next) => {
+  try {
+    const policyName = req.params.policy.toUpperCase();
+    const allowed = ['TOS', 'PRIVACY', 'DPA', 'REFUND', 'MSA'];
+    if (!allowed.includes(policyName)) {
+      return next(new AppError('Policy file not found', 404));
+    }
+
+    const filepath = path.join(__dirname, '..', '..', 'legal', `${policyName}.md`);
+    if (!fs.existsSync(filepath)) {
+      return next(new AppError(`Legal documentation for ${policyName} not yet drafted`, 404));
+    }
+
+    const content = fs.readFileSync(filepath, 'utf8');
+    res.status(200).json({ status: 'success', data: { policy: policyName, content } });
+  } catch (err) {
+    next(err);
+  }
+});
+
+module.exports = router;
