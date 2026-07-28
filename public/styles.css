@@ -1076,3 +1076,45 @@ body.light-theme .onboarding-modal select {
 .onboarding-modal .btn-block {
   margin-top: 1.75rem;
 }
+
+/* Staggered card grid entrance animations */
+.product-card {
+  opacity: 0;
+  animation: cardEntrance 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+.product-card:nth-child(1) { animation-delay: 0.04s; }
+.product-card:nth-child(2) { animation-delay: 0.08s; }
+.product-card:nth-child(3) { animation-delay: 0.12s; }
+.product-card:nth-child(4) { animation-delay: 0.16s; }
+.product-card:nth-child(5) { animation-delay: 0.20s; }
+.product-card:nth-child(6) { animation-delay: 0.24s; }
+.product-card:nth-child(7) { animation-delay: 0.28s; }
+.product-card:nth-child(8) { animation-delay: 0.32s; }
+.product-card:nth-child(9) { animation-delay: 0.36s; }
+.product-card:nth-child(10) { animation-delay: 0.40s; }
+.product-card:nth-child(11) { animation-delay: 0.44s; }
+.product-card:nth-child(12) { animation-delay: 0.48s; }
+
+/* Modal slide steps transition */
+@keyframes stepSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+.cart-step-panel.active {
+  animation: stepSlideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Micro-feedback click physics */
+.btn:active,
+.cart-trigger:active,
+.theme-btn:active,
+.cat-filter:active {
+  transform: scale(0.96);
+}
+

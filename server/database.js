@@ -152,7 +152,15 @@ class TransactionalDatabase {
           "p-1": { id: "p-1", name: "AURA Glassmorphic Keyboard", category: "Electronics", price: 299.0, stock: 15, version: 1, deleted_at: null, merchant_id: "u-2" },
           "p-2": { id: "p-2", name: "Holographic Workspace Stand", category: "Office", price: 189.0, stock: 8, version: 1, deleted_at: null, merchant_id: "u-2" },
           "p-3": { id: "p-3", name: "Quantum Noise Cancel Earbuds", category: "Electronics", price: 249.0, stock: 25, version: 1, deleted_at: null, merchant_id: "u-2" },
-          "p-4": { id: "p-4", name: "Ergonomic Lumbar Arch Seat", category: "Furniture", price: 599.0, stock: 5, version: 1, deleted_at: null, merchant_id: "u-2" }
+          "p-4": { id: "p-4", name: "Ergonomic Lumbar Arch Seat", category: "Furniture", price: 599.0, stock: 5, version: 1, deleted_at: null, merchant_id: "u-2" },
+          "p-5": { id: "p-5", name: "Ambient Desktop LED Beam", category: "Electronics", price: 149.0, stock: 12, version: 1, deleted_at: null, merchant_id: "u-2" },
+          "p-6": { id: "p-6", name: "Minimalist Leather Desk Pad", category: "Office", price: 79.0, stock: 30, version: 1, deleted_at: null, merchant_id: "u-2" },
+          "p-7": { id: "p-7", name: "Acoustic Wall Slat Panel", category: "Furniture", price: 349.0, stock: 10, version: 1, deleted_at: null, merchant_id: "u-2" },
+          "p-8": { id: "p-8", name: "Machined Aluminum Pen Tray", category: "Office", price: 59.0, stock: 18, version: 1, deleted_at: null, merchant_id: "u-2" },
+          "p-9": { id: "p-9", name: "Carbon Fiber Laptop Stand", category: "Electronics", price: 129.0, stock: 14, version: 1, deleted_at: null, merchant_id: "u-2" },
+          "p-10": { id: "p-10", name: "Modular Cable Anchor Block", category: "Office", price: 39.0, stock: 40, version: 1, deleted_at: null, merchant_id: "u-2" },
+          "p-11": { id: "p-11", name: "Solid Walnut Monitor Riser", category: "Furniture", price: 199.0, stock: 7, version: 1, deleted_at: null, merchant_id: "u-2" },
+          "p-12": { id: "p-12", name: "MagSafe Charging Desk Valet", category: "Electronics", price: 119.0, stock: 22, version: 1, deleted_at: null, merchant_id: "u-2" }
         },
         orders: {},
         audit_logs: {}
