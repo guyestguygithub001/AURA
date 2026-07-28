@@ -237,21 +237,21 @@
           </table>
         </div>
       </div>
+
+      <!-- ==================== SYSTEM MONITOR LEDGER (AUDIT STREAM) ==================== -->
+      <div class="system-monitor-ledger card" style="margin-top: 2rem;">
+        <div class="ledger-header">
+          <div class="title"><i class="fa-solid fa-terminal"></i> AURA Architecture Ledger (Real-time Audit Stream)</div>
+          <div class="controls">
+            <button class="btn btn-text btn-sm" onclick="clearLedger()"><i class="fa-solid fa-trash-can"></i> Clear</button>
+          </div>
+        </div>
+        <div class="ledger-logs" id="ledger-logs-stream">
+          <div class="log-row sys-log">[System] Client dashboard connected to AURA Local Broker...</div>
+        </div>
+      </div>
     </section>
   </main>
-
-  <!-- ==================== SYSTEM MONITOR LEDGER (AUDIT STREAM) ==================== -->
-  <footer class="system-monitor-ledger">
-    <div class="ledger-header">
-      <div class="title"><i class="fa-solid fa-terminal"></i> AURA Architecture Ledger (Real-time Audit Stream)</div>
-      <div class="controls">
-        <button class="btn btn-text btn-sm" onclick="clearLedger()"><i class="fa-solid fa-trash-can"></i> Clear</button>
-      </div>
-    </div>
-    <div class="ledger-logs" id="ledger-logs-stream">
-      <div class="log-row sys-log">[System] Client dashboard connected to AURA Local Broker...</div>
-    </div>
-  </footer>
 
   <!-- ==================== CART SLIDE-OUT PANEL ==================== -->
   <div class="cart-overlay" id="cart-overlay" onclick="toggleCart(false)"></div>

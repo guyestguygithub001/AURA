@@ -238,7 +238,7 @@ body {
   margin: 0 auto;
   padding: 0 2rem;
   min-height: calc(100vh - 350px);
-  padding-bottom: 220px; /* Space for the fixed system ledger */
+  padding-bottom: 2rem;
 }
 
 .view-section {
@@ -909,16 +909,12 @@ input:focus, select:focus {
 
 /* System Monitor Ledger (CLI style) */
 .system-monitor-ledger {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  width: 100%;
   background: #05040a;
-  border-top: 1px solid var(--border);
-  height: 180px;
-  z-index: 90;
+  border: 1px solid var(--border);
+  height: 250px;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 .ledger-header {
   background: rgba(255, 255, 255, 0.02);
