@@ -33,9 +33,9 @@ class TransactionalDatabase {
     if (!fs.existsSync(this.dbPath)) {
       const defaultState = {
         users: {
-          "u-1": { id: "u-1", name: "Alpha Buyer", role: "buyer", balance: 50000.0, created_at: new Date().toISOString() },
-          "u-2": { id: "u-2", name: "Premium Merchant", role: "merchant", balance: 1000.0, created_at: new Date().toISOString() },
-          "u-3": { id: "u-3", name: "System Admin", role: "admin", balance: 0.0, created_at: new Date().toISOString() }
+          "u-1": { id: "u-1", name: "Alpha Buyer", role: "buyer", password: "password123", balance: 50000.0, created_at: new Date().toISOString() },
+          "u-2": { id: "u-2", name: "Premium Merchant", role: "merchant", password: "password123", balance: 1000.0, created_at: new Date().toISOString() },
+          "u-3": { id: "u-3", name: "System Admin", role: "admin", password: "adminpassword", balance: 0.0, created_at: new Date().toISOString() }
         },
         products: {
           "p-1": { id: "p-1", name: "AURA Glassmorphic Keyboard", category: "Electronics", price: 299.0, stock: 15, version: 1, deleted_at: null, merchant_id: "u-2" },

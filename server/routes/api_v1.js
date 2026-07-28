@@ -369,10 +369,10 @@ router.get('/policies/:policy', async (req, res, next) => {
 // 10. User Onboarding & Sign-Up endpoint
 router.post('/users/onboard', async (req, res, next) => {
   try {
-    const { id, name, role, balance } = req.body;
+    const { id, name, password, role, balance } = req.body;
 
-    if (!id || !name || !role) {
-      return next(new AppError('Missing onboarding parameters: id, name, role', 400));
+    if (!id || !name || !password || !role) {
+      return next(new AppError('Missing onboarding parameters: id, name, password, role', 400));
     }
 
     if (role !== 'buyer' && role !== 'merchant') {
@@ -392,6 +392,7 @@ router.post('/users/onboard', async (req, res, next) => {
       const userRecord = {
         id,
         name,
+        password,
         role,
         balance: startingBalance,
         created_at: new Date().toISOString()
@@ -411,6 +412,53 @@ router.post('/users/onboard', async (req, res, next) => {
     });
 
     res.status(201).json({ status: 'success', data: { user: result } });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// 11. User Login / Authentication
+router.post('/users/login', async (req, res, next) => {
+  try {
+    const { id, password } = req.body;
+
+    if (!id || !password) {
+      return next(new AppError('Missing credentials: id, password', 400));
+    }
+
+    // Lookup user in DB
+    const users = db.read().users;
+    const user = users[id];
+
+    if (!user) {
+      return next(new AppError('Authentication failed: Invalid identity handle', 401));
+    }
+
+    if (user.password !== password) {
+      return next(new AppError('Authentication failed: Invalid password credential', 401));
+    }
+
+    // Log login audit trail
+    await logAuditAction({
+      actor: id,
+      action: 'USER_LOGIN',
+      entityType: 'user',
+      entityId: id,
+      afterState: { id: user.id, name: user.name, role: user.role },
+      req
+    });
+
+    res.status(200).json({
+      status: 'success',
+      data: {
+        user: {
+          id: user.id,
+          name: user.name,
+          role: user.role,
+          balance: user.balance
+        }
+      }
+    });
   } catch (err) {
     next(err);
   }

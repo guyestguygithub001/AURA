@@ -372,70 +372,100 @@
     </div>
   </div>
 
-  <!-- ==================== ONBOARDING & SIGN-UP MODAL ==================== -->
+  <!-- ==================== ONBOARDING, SIGN-UP & LOGIN MODAL ==================== -->
   <div class="modal-overlay" id="onboard-modal-overlay"></div>
-  <div class="policy-modal onboarding-modal" id="onboard-modal" style="height: 520px; max-width: 550px;">
+  <div class="policy-modal onboarding-modal" id="onboard-modal" style="height: 560px; max-width: 550px;">
     <div class="modal-header">
-      <h3>Join AURA Network</h3>
+      <h3 id="onboard-modal-title">Join AURA Network</h3>
       <button class="close-btn" onclick="closeOnboarding()"><i class="fa-solid fa-xmark"></i></button>
     </div>
+
+    <!-- Toggle between Sign Up and Login modes -->
+    <div class="policy-tabs" id="onboard-mode-tabs">
+      <button class="policy-tab-btn active" id="onboard-tab-signup" onclick="toggleOnboardMode('signup')">Sign Up</button>
+      <button class="policy-tab-btn" id="onboard-tab-login" onclick="toggleOnboardMode('login')">Log In</button>
+    </div>
     
-    <!-- Onboarding Step Indicator -->
+    <!-- Sign Up Step Indicators (Hidden in Login Mode) -->
     <div class="checkout-steps" id="onboard-steps-bar" style="display: flex;">
       <div class="step active" id="onboard-step-1-indicator">1. Details</div>
       <div class="step" id="onboard-step-2-indicator">2. Config</div>
       <div class="step" id="onboard-step-3-indicator">3. Assets</div>
     </div>
 
-    <div class="modal-content">
-      <!-- Onboarding Step 1 -->
-      <div class="cart-step-panel active" id="onboard-step-1" style="padding:0;">
-        <h4>Configure User Credentials</h4>
-        <p class="form-desc" style="margin-bottom:1.5rem;">Input unique details to register a user context on the AURA platform.</p>
+    <div class="modal-content" style="padding-top: 1rem;">
+      <!-- ================= SIGN UP FLOW PANELS ================= -->
+      <div id="onboard-signup-flow-wrapper">
+        <!-- Onboarding Step 1 -->
+        <div class="cart-step-panel active" id="onboard-step-1" style="padding:0;">
+          <h4>Configure User Credentials</h4>
+          <p class="form-desc" style="margin-bottom:1rem;">Input unique details to register a user context on the AURA platform.</p>
+          <div class="form-group">
+            <label>Unique User ID</label>
+            <input type="text" id="onboard-username" placeholder="e.g. buyer_99" required>
+          </div>
+          <div class="form-group">
+            <label>Display Name</label>
+            <input type="text" id="onboard-fullname" placeholder="e.g. John Doe" required>
+          </div>
+          <div class="form-group">
+            <label>Password</label>
+            <input type="password" id="onboard-password" placeholder="••••••••" required>
+          </div>
+          <button class="btn btn-primary btn-block btn-lg" onclick="onboardGoToStep(2)" style="margin-top: 1rem;">
+            Next: Platform Role <i class="fa-solid fa-arrow-right"></i>
+          </button>
+        </div>
+
+        <!-- Onboarding Step 2 -->
+        <div class="cart-step-panel" id="onboard-step-2" style="padding:0;">
+          <h4>Select Platform Role</h4>
+          <p class="form-desc" style="margin-bottom:1.5rem;">Choose your transactional tier. Roles determine portal panel views.</p>
+          
+          <div class="form-group">
+            <label>Ecosystem Role</label>
+            <select id="onboard-role" style="background: rgba(255,255,255,0.03); border: 1px solid var(--border);">
+              <option value="buyer">Buyer (Browse catalogs & checkout)</option>
+              <option value="merchant">Merchant (Manage listings & dispatches)</option>
+            </select>
+          </div>
+
+          <div class="button-row" style="margin-top: 2rem;">
+            <button class="btn btn-secondary" onclick="onboardGoToStep(1)"><i class="fa-solid fa-arrow-left"></i> Back</button>
+            <button class="btn btn-primary" onclick="onboardGoToStep(3)">Next: Wallet Seed <i class="fa-solid fa-arrow-right"></i></button>
+          </div>
+        </div>
+
+        <!-- Onboarding Step 3 -->
+        <div class="cart-step-panel" id="onboard-step-3" style="padding:0;">
+          <h4>Seed Wallet Balance</h4>
+          <p class="form-desc" style="margin-bottom:1.5rem;">Input USD balance to fund the platform sandbox wallet ledger.</p>
+          <div class="form-group">
+            <label>Starting Balance ($)</label>
+            <input type="number" id="onboard-funds" min="0" value="10000" step="100">
+          </div>
+          <div class="button-row" style="margin-top: 2rem;">
+            <button class="btn btn-secondary" onclick="onboardGoToStep(2)"><i class="fa-solid fa-arrow-left"></i> Back</button>
+            <button class="btn btn-primary" onclick="submitOnboarding()">Register Identity <i class="fa-solid fa-circle-check"></i></button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= LOGIN FLOW PANEL ================= -->
+      <div id="onboard-login-flow-wrapper" style="display: none;">
+        <h4>Authenticate Login Credentials</h4>
+        <p class="form-desc" style="margin-bottom:1.5rem;">Input your Username and Password to access your profile panel. (Pre-seeded: u-1/password123 or u-2/password123)</p>
         <div class="form-group">
-          <label>Unique User ID</label>
-          <input type="text" id="onboard-username" placeholder="e.g. buyer_99" required>
+          <label>Unique User ID (Username)</label>
+          <input type="text" id="login-username" placeholder="e.g. buyer_99" required>
         </div>
         <div class="form-group">
-          <label>Display Name</label>
-          <input type="text" id="onboard-fullname" placeholder="e.g. John Doe" required>
+          <label>Password</label>
+          <input type="password" id="login-password" placeholder="••••••••" required>
         </div>
-        <button class="btn btn-primary btn-block btn-lg" onclick="onboardGoToStep(2)" style="margin-top: 1rem;">
-          Next: Platform Role <i class="fa-solid fa-arrow-right"></i>
+        <button class="btn btn-primary btn-block btn-lg" onclick="submitLogin()" style="margin-top: 2rem;">
+          Authenticate Account <i class="fa-solid fa-right-to-bracket"></i>
         </button>
-      </div>
-
-      <!-- Onboarding Step 2 -->
-      <div class="cart-step-panel" id="onboard-step-2" style="padding:0;">
-        <h4>Select Platform Role</h4>
-        <p class="form-desc" style="margin-bottom:1.5rem;">Choose your transactional tier. Roles determine portal panel views.</p>
-        
-        <div class="form-group">
-          <label>Ecosystem Role</label>
-          <select id="onboard-role" style="background: rgba(255,255,255,0.03); border: 1px solid var(--border);">
-            <option value="buyer">Buyer (Browse catalogs & checkout)</option>
-            <option value="merchant">Merchant (Manage listings & dispatches)</option>
-          </select>
-        </div>
-
-        <div class="button-row" style="margin-top: 2rem;">
-          <button class="btn btn-secondary" onclick="onboardGoToStep(1)"><i class="fa-solid fa-arrow-left"></i> Back</button>
-          <button class="btn btn-primary" onclick="onboardGoToStep(3)">Next: Wallet Seed <i class="fa-solid fa-arrow-right"></i></button>
-        </div>
-      </div>
-
-      <!-- Onboarding Step 3 -->
-      <div class="cart-step-panel" id="onboard-step-3" style="padding:0;">
-        <h4>Seed Wallet Balance</h4>
-        <p class="form-desc" style="margin-bottom:1.5rem;">Input USD balance to fund the platform sandbox wallet ledger.</p>
-        <div class="form-group">
-          <label>Starting Balance ($)</label>
-          <input type="number" id="onboard-funds" min="0" value="10000" step="100">
-        </div>
-        <div class="button-row" style="margin-top: 2rem;">
-          <button class="btn btn-secondary" onclick="onboardGoToStep(2)"><i class="fa-solid fa-arrow-left"></i> Back</button>
-          <button class="btn btn-primary" onclick="submitOnboarding()">Register Identity <i class="fa-solid fa-circle-check"></i></button>
-        </div>
       </div>
     </div>
   </div>

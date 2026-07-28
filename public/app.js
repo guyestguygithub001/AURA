@@ -767,18 +767,39 @@ async function pollSystemUpdates() {
 function openOnboarding() {
   document.getElementById('onboard-modal-overlay').classList.add('active');
   document.getElementById('onboard-modal').classList.add('active');
-  onboardGoToStep(1);
   
-  // Clear forms
+  // Reset forms
   document.getElementById('onboard-username').value = '';
   document.getElementById('onboard-fullname').value = '';
+  document.getElementById('onboard-password').value = '';
   document.getElementById('onboard-role').value = 'buyer';
   document.getElementById('onboard-funds').value = '10000';
+  document.getElementById('login-username').value = '';
+  document.getElementById('login-password').value = '';
+
+  toggleOnboardMode('signup');
 }
 
 function closeOnboarding() {
   document.getElementById('onboard-modal-overlay').classList.remove('active');
   document.getElementById('onboard-modal').classList.remove('active');
+}
+
+function toggleOnboardMode(mode) {
+  const isSignup = mode === 'signup';
+  
+  document.getElementById('onboard-tab-signup').classList.toggle('active', isSignup);
+  document.getElementById('onboard-tab-login').classList.toggle('active', !isSignup);
+  
+  document.getElementById('onboard-steps-bar').style.display = isSignup ? 'flex' : 'none';
+  document.getElementById('onboard-signup-flow-wrapper').style.display = isSignup ? 'block' : 'none';
+  document.getElementById('onboard-login-flow-wrapper').style.display = isSignup ? 'none' : 'block';
+  
+  document.getElementById('onboard-modal-title').innerText = isSignup ? 'Join AURA Network' : 'Authenticate Portal';
+  
+  if (isSignup) {
+    onboardGoToStep(1);
+  }
 }
 
 function onboardGoToStep(step) {
@@ -793,11 +814,12 @@ function onboardGoToStep(step) {
 async function submitOnboarding() {
   const username = document.getElementById('onboard-username').value.trim();
   const name = document.getElementById('onboard-fullname').value.trim();
+  const password = document.getElementById('onboard-password').value;
   const role = document.getElementById('onboard-role').value;
   const balance = parseFloat(document.getElementById('onboard-funds').value);
 
-  if (!username || !name) {
-    alert('Please fill out username and name fields.');
+  if (!username || !name || !password) {
+    alert('Please fill out all credentials: Username, Display Name, and Password.');
     onboardGoToStep(1);
     return;
   }
@@ -808,6 +830,7 @@ async function submitOnboarding() {
       body: JSON.stringify({
         id: username,
         name,
+        password,
         role,
         balance
       })
@@ -815,24 +838,65 @@ async function submitOnboarding() {
 
     const user = result.data.user;
     
-    // Append option to select persona dropdown
-    const personaSelect = document.getElementById('persona-select');
-    const option = document.createElement('option');
-    option.value = user.id;
-    option.text = `${user.name} ($${user.balance.toFixed(2)})`;
-    personaSelect.appendChild(option);
+    alert(`Account "${user.id}" registered successfully! Please log in with your credentials.`);
+    
+    // Automatically switch to login mode and pre-fill username
+    toggleOnboardMode('login');
+    document.getElementById('login-username').value = user.id;
+    document.getElementById('login-password').focus();
 
-    // Switch active persona
+  } catch (err) {
+    alert(`Registration failed: ${err.message}`);
+    onboardGoToStep(1);
+  }
+}
+
+async function submitLogin() {
+  const username = document.getElementById('login-username').value.trim();
+  const password = document.getElementById('login-password').value;
+
+  if (!username || !password) {
+    alert('Please enter your Username and Password.');
+    return;
+  }
+
+  try {
+    const result = await apiRequest('/users/login', {
+      method: 'POST',
+      body: JSON.stringify({
+        id: username,
+        password
+      })
+    });
+
+    const user = result.data.user;
+
+    // Check if user option already exists in dropdown
+    const personaSelect = document.getElementById('persona-select');
+    let exists = false;
+    for (let i = 0; i < personaSelect.options.length; i++) {
+      if (personaSelect.options[i].value === user.id) {
+        exists = true;
+        break;
+      }
+    }
+
+    if (!exists) {
+      const option = document.createElement('option');
+      option.value = user.id;
+      option.text = `${user.name} ($${user.balance.toFixed(2)})`;
+      personaSelect.appendChild(option);
+    }
+
+    // Authenticate and set active user session context
     personaSelect.value = user.id;
-    // Dispatch event to trigger listener
     personaSelect.dispatchEvent(new Event('change'));
 
     closeOnboarding();
-    alert(`Success! Onboarded profile "${user.id}" as a ${user.role.toUpperCase()}.`);
+    alert(`Authenticated! Welcome back, ${user.name}.`);
 
   } catch (err) {
-    alert(`Onboarding failed: ${err.message}`);
-    onboardGoToStep(1);
+    alert(`Authentication failed: ${err.message}`);
   }
 }
 
