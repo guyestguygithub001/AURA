@@ -52,16 +52,22 @@ function initSession() {
     loadCatalogData();
     pollSystemUpdates();
   } else {
+    // Guest User Mode (Anonymous catalog browsing)
     currentPersonaId = '';
     currentPersonaRole = '';
     
+    const profileHeader = document.getElementById('user-profile-header');
+    const authBtn = document.getElementById('header-auth-btn');
+    if (profileHeader && authBtn) {
+      profileHeader.style.display = 'none';
+      authBtn.style.display = 'block';
+    }
+
     const closeBtn = document.getElementById('onboard-close-btn');
-    if (closeBtn) closeBtn.style.display = 'none';
+    if (closeBtn) closeBtn.style.display = 'block';
     
-    setTimeout(() => {
-      openOnboarding();
-      toggleOnboardMode('login');
-    }, 100);
+    updateNavigationTabs();
+    loadCatalogData();
   }
 }
 
@@ -317,7 +323,7 @@ function updateNavigationTabs() {
   tabAdmin.style.display = 'none';
 
   // Toggle visibility based on role
-  if (currentPersonaRole === 'buyer') {
+  if (!currentPersonaRole || currentPersonaRole === 'buyer') {
     tabBuyer.style.display = 'inline-flex';
     switchView('buyer');
   } else if (currentPersonaRole === 'merchant') {
@@ -445,6 +451,14 @@ function renderCart() {
 
 // Checkout Step Swapper
 function checkoutGoToStep(step) {
+  if (step > 1 && !currentPersonaId) {
+    toggleCart(false);
+    openOnboarding();
+    toggleOnboardMode('login');
+    alert('Please log in or sign up to complete your checkout transaction.');
+    return;
+  }
+
   const steps = [1, 2, 3];
   steps.forEach(s => {
     document.getElementById(`cart-step-${s}`).classList.toggle('active', s === step);

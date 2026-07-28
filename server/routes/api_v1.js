@@ -37,7 +37,7 @@ const requireRole = (roles) => {
 };
 
 // 1. Get all products (Active only - Soft Delete filter)
-router.get('/products', requireAuth, async (req, res, next) => {
+router.get('/products', async (req, res, next) => {
   try {
     const products = await db.findAll('products');
     res.status(200).json({ status: 'success', results: products.length, data: { products } });
