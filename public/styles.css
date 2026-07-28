@@ -18,6 +18,19 @@
   --transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+/* Light Theme Variables */
+body.light-theme {
+  --bg: #f5f3fa;
+  --bg-card: rgba(255, 255, 255, 0.85);
+  --border: rgba(168, 85, 247, 0.12);
+  --border-focus: rgba(168, 85, 247, 0.4);
+  --text: #191428;
+  --text-muted: #625c75;
+  --accent: #9333ea;
+  --accent-glow: rgba(147, 51, 234, 0.2);
+  --accent-hover: #7e22ce;
+}
+
 * {
   box-sizing: border-box;
   margin: 0;
@@ -1046,3 +1059,152 @@ input:focus, select:focus {
 .modal-content ul { margin-left: 1.5rem; margin-bottom: 1rem; }
 .modal-content li { margin-bottom: 0.35rem; color: #cbcae0; }
 .modal-content hr { border: none; border-top: 1px solid rgba(255,255,255,0.05); margin: 1.5rem 0; }
+
+/* Theme Selector Styles */
+.theme-selector {
+  display: flex;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border);
+  padding: 0.2rem;
+  border-radius: 30px;
+  gap: 0.15rem;
+}
+.theme-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  transition: var(--transition);
+}
+.theme-btn:hover {
+  color: var(--text);
+}
+.theme-btn.active {
+  background: var(--accent);
+  color: #fff;
+  box-shadow: 0 0 10px var(--accent-glow);
+}
+
+/* Light Theme Element Custom Adjustments */
+body.light-theme .main-header {
+  background: rgba(245, 243, 250, 0.85);
+}
+body.light-theme select,
+body.light-theme input,
+body.light-theme .fake-stripe-input {
+  background: rgba(0, 0, 0, 0.03);
+  border-color: rgba(0, 0, 0, 0.08);
+  color: #191428;
+}
+body.light-theme .card,
+body.light-theme .policy-modal,
+body.light-theme .cart-drawer {
+  background: #ffffff;
+  border-color: rgba(147, 51, 234, 0.1);
+  box-shadow: 0 10px 30px rgba(147, 51, 234, 0.05);
+}
+body.light-theme .view-tab {
+  background: #ffffff;
+}
+body.light-theme .view-tab.active {
+  background: var(--accent);
+  color: #fff;
+}
+body.light-theme .system-monitor-ledger {
+  background: #fdfdfd;
+  border-top-color: rgba(147, 51, 234, 0.12);
+}
+body.light-theme .ledger-header {
+  background: rgba(0, 0, 0, 0.02);
+}
+body.light-theme .log-row.sys-log { color: #1e6b7b; }
+body.light-theme .log-row.api-log { color: #7e22ce; }
+body.light-theme .log-row.db-log { color: #b45309; }
+body.light-theme .log-row.err-log { color: #dc2626; }
+body.light-theme .modal-content p,
+body.light-theme .modal-content li {
+  color: #3b364f;
+}
+body.light-theme .modal-content h1,
+body.light-theme .modal-content h2,
+body.light-theme .modal-content h3 {
+  color: #191428;
+}
+
+/* Onboarding Layouts */
+.onboard-steps-bar {
+  display: flex;
+  background: rgba(0, 0, 0, 0.1);
+  border-bottom: 1px solid var(--border);
+}
+body.light-theme .onboard-steps-bar {
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.role-cards-row {
+  display: flex;
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+.role-card {
+  flex: 1;
+  text-align: center;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  padding: 1.5rem;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.02);
+  transition: var(--transition);
+}
+.role-card.active {
+  border-color: var(--accent);
+  background: rgba(168, 85, 247, 0.05);
+  box-shadow: 0 0 15px var(--accent-glow);
+}
+body.light-theme .role-card.active {
+  background: rgba(147, 51, 234, 0.04);
+}
+.role-icon {
+  font-size: 2rem;
+  color: var(--accent);
+  margin-bottom: 0.75rem;
+}
+.role-card h5 {
+  font-family: var(--font-header);
+  font-size: 1.05rem;
+  margin-bottom: 0.5rem;
+}
+.role-card p {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+/* Admin console custom grids */
+.admin-stats-grid {
+  display: flex;
+  gap: 2rem;
+  margin-top: 1rem;
+}
+.admin-stat-item {
+  display: flex;
+  flex-direction: column;
+}
+.admin-stat-item .lbl {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+.admin-stat-item .val {
+  font-family: var(--font-header);
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--text);
+}
+

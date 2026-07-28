@@ -7,6 +7,7 @@ let products = [];
 let cart = [];
 let searchDebounceTimer = null;
 let auditLogsOffset = 0;
+let activeTheme = 'dark'; // 'dark' | 'light' | 'system'
 
 // API Config
 const API_BASE = '/api/v1';
@@ -15,6 +16,7 @@ const API_BASE = '/api/v1';
 document.addEventListener('DOMContentLoaded', () => {
   setupEventListeners();
   loadCatalogData();
+  initTheme();
   switchView('buyer');
   
   // Start polling audit logs & wallet data for real-time ledger representation
@@ -26,16 +28,90 @@ document.addEventListener('DOMContentLoaded', () => {
 function setupEventListeners() {
   document.getElementById('persona-select').addEventListener('change', (e) => {
     currentPersonaId = e.target.value;
-    currentPersonaRole = currentPersonaId === 'u-1' ? 'buyer' : 'merchant';
     
-    // Log persona switch
-    logToLedger('sys', `[Client] Switch Persona to: ${currentPersonaId === 'u-1' ? 'Alpha Buyer (Buyer)' : 'Premium Merchant (Seller)'}`);
+    // Resolve role based on persona ID
+    if (currentPersonaId === 'u-1') {
+      currentPersonaRole = 'buyer';
+    } else if (currentPersonaId === 'u-2') {
+      currentPersonaRole = 'merchant';
+    } else if (currentPersonaId === 'u-3') {
+      currentPersonaRole = 'admin';
+    } else {
+      // Custom onboarded user check
+      checkOnboardedUserRole(currentPersonaId);
+    }
+    
+    // Toggle Admin Panel Tab Visibility
+    const adminTab = document.getElementById('tab-admin');
+    if (currentPersonaRole === 'admin') {
+      adminTab.style.display = 'inline-flex';
+    } else {
+      adminTab.style.display = 'none';
+      if (activeView === 'admin') {
+        switchView('buyer');
+      }
+    }
+
+    logToLedger('sys', `[Client] Switch Persona to: ${currentPersonaId} (Role: ${currentPersonaRole.toUpperCase()})`);
     
     // Refresh interfaces
     loadCatalogData();
     pollSystemUpdates();
+    if (activeView === 'merchant') refreshMerchantView();
+    if (activeView === 'admin') refreshAdminView();
   });
 }
+
+async function checkOnboardedUserRole(userId) {
+  try {
+    const res = await fetch(`${API_BASE}/users`);
+    const data = await res.json();
+    const user = data.data.users.find(u => u.id === userId);
+    if (user) {
+      currentPersonaRole = user.role;
+    }
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+// Theme Engine Initialization
+function initTheme() {
+  const savedTheme = localStorage.getItem('aura-theme') || 'dark';
+  setTheme(savedTheme);
+}
+
+function setTheme(theme) {
+  activeTheme = theme;
+  localStorage.setItem('aura-theme', theme);
+
+  // Toggle active button style
+  const themesList = ['dark', 'light', 'system'];
+  themesList.forEach(t => {
+    const btn = document.getElementById(`theme-btn-${t}`);
+    if (btn) btn.classList.toggle('active', t === theme);
+  });
+
+  const body = document.body;
+  if (theme === 'light') {
+    body.classList.add('light-theme');
+  } else if (theme === 'dark') {
+    body.classList.remove('light-theme');
+  } else {
+    // System theme sync
+    const systemPrefersLight = window.matchMedia('(prefers-color-scheme: light)').matches;
+    body.classList.toggle('light-theme', systemPrefersLight);
+  }
+
+  logToLedger('sys', `[Theme Engine] Switched display personalization theme to: ${theme.toUpperCase()}`);
+}
+
+// Watch for system theme changes in real-time
+window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', () => {
+  if (activeTheme === 'system') {
+    setTheme('system');
+  }
+});
 
 // Fetch helper with auto ledger logging
 async function apiRequest(endpoint, options = {}) {
@@ -57,7 +133,7 @@ async function apiRequest(endpoint, options = {}) {
     
     if (!response.ok) {
       logToLedger('err', `[API Error Response] Status ${response.status} - ${resData.message || 'Operation failed'}`);
-      throw new Error(resData.message || 'Server error occurred');
+      throw new Error(resData.message || 'Operation failed');
     }
     
     logToLedger('sys', `[API Success Response] ${method} ${endpoint} - Status ${response.status}`);
@@ -185,15 +261,19 @@ function switchView(view) {
   // Toggle tab buttons
   document.getElementById('tab-buyer').classList.toggle('active', view === 'buyer');
   document.getElementById('tab-merchant').classList.toggle('active', view === 'merchant');
+  document.getElementById('tab-admin').classList.toggle('active', view === 'admin');
   
   // Toggle view panels
   document.getElementById('buyer-view').classList.toggle('active', view === 'buyer');
   document.getElementById('merchant-view').classList.toggle('active', view === 'merchant');
+  document.getElementById('admin-view').classList.toggle('active', view === 'admin');
   
   logToLedger('sys', `[Client] Switch View Pane: ${view.toUpperCase()}`);
   
   if (view === 'merchant') {
     refreshMerchantView();
+  } else if (view === 'admin') {
+    refreshAdminView();
   }
 }
 
@@ -273,6 +353,7 @@ function updateCartBadge() {
   document.getElementById('cart-badge-count').innerText = totalItems;
 }
 
+// Render Cart
 function renderCart() {
   const container = document.getElementById('cart-items-list');
   if (!container) return;
@@ -340,10 +421,9 @@ async function submitSecureCheckout() {
   document.getElementById('checkout-spinner-pane').style.display = 'flex';
   document.getElementById('checkout-success-pane').style.display = 'none';
   
-  // Introduce a slight delay to simulate processing & network latency for a high-fidelity visual check
   setTimeout(async () => {
     try {
-      const orderItem = cart[0]; // Simplification for demo checkout processing (single items checklist)
+      const orderItem = cart[0]; 
       
       const payload = {
         buyerId: currentPersonaId,
@@ -371,10 +451,9 @@ async function submitSecureCheckout() {
         <div class="receipt-line"><span>Audit Key</span><strong>${order.created_at}</strong></div>
       `;
       
-      // Clear local cart
       cart = [];
       updateCartBadge();
-      loadCatalogData(); // Pull fresh version index stock data
+      loadCatalogData(); 
       
     } catch (err) {
       logToLedger('err', `[Transaction Abort] Lock aborted: ${err.message}`);
@@ -389,29 +468,10 @@ function resetCartState() {
   checkoutGoToStep(1);
 }
 
-// Merchant portal actions
+// Merchant Dashboard functions
 async function refreshMerchantView() {
-  // Fetch active merchant wallet info
   pollSystemUpdates();
-  
-  try {
-    // Fetch active orders to display
-    const resLogs = await fetch(`${API_BASE}/audit-logs`);
-    const logsData = await resLogs.json();
-    
-    // We fetch orders using DB read file fallback since it's sandbox environment
-    const usersRes = await apiRequest('/users');
-    const users = usersRes.data.users;
-    
-    // Fetch DB snapshot directly for order arrays
-    const rawDB = await fetch('/api/v1/users'); // Custom endpoint returning raw state wrapper
-    const dataState = await rawDB.json();
-    
-    // Load orders list
-    renderMerchantOrders();
-  } catch (err) {
-    console.error(err);
-  }
+  renderMerchantOrders();
 }
 
 async function renderMerchantOrders() {
@@ -419,47 +479,18 @@ async function renderMerchantOrders() {
   if (!container) return;
   
   try {
-    const rawDB = await fetch(`${API_BASE}/users`);
-    const usersRes = await rawDB.json();
-    
-    // In our simplified database.js implementation, we pull orders from database
-    const productsRes = await fetch(`${API_BASE}/products`);
-    const productsData = await productsRes.json();
-    
-    const dbRaw = await fetch(`${API_BASE}/audit-logs`); // Returns all logs
-    // Let's call a quick endpoint or fetch users to extract orders
-    // Actually we can list all active order items by checking data
-    // We will parse orders array directly
-    // Let's create an endpoint or simply read from the response
-    // To make it robust, we'll fetch /users and extract all orders from response
-    // Wait, let's look at api_v1.js: GET /users returns raw DB data wrapper.
-    // In api_v1.js: router.get('/users', ...) returns object containing users only, but we can query raw database structure if we add routes or read it.
-    // Let's fetch audit logs to populate orders, or load it from a query.
-    // Let's look at the database data: we have an 'orders' collection!
-    // Since we don't have a direct GET /orders endpoint, we can check how to query it.
-    // Wait, we can fetch all audit logs, and retrieve orders from logs, or query them.
-    // Actually, let's look at api_v1.js. In api_v1.js we have:
-    // router.get('/users') returns object with users only: res.status(200).json({ status: 'success', data: { users: Object.values(data.users) } });
-    // Let's see: we can query the order details. Let's make a quick lookup.
-    // Wait! Can we inspect if we can query orders?
-    // Let's look at api_v1.js. Oh, it doesn't have a simple GET /orders. But wait, it returns audit logs!
-    // Audit logs contain order details under `afterState`. We can extract order lists from audit logs or just query all logs where action is 'ORDER_PLACE'.
-    // Let's write client-side logic to scan audit logs for orders, or let's create a custom route if needed. But scanning audit logs for order states is super easy!
-    // Let's extract orders from audit logs.
     const resLogs = await fetch(`${API_BASE}/audit-logs`);
     const logsData = await resLogs.json();
-    
-    const ordersMap = {};
     const logs = logsData.data.logs;
+
+    const ordersMap = {};
     
-    // Reconstruct current orders state from audit logs
     logs.forEach(log => {
       if (log.entityType === 'order') {
         const orderId = log.entityId;
         if (!ordersMap[orderId]) {
           ordersMap[orderId] = log.afterState || log.beforeState;
         } else {
-          // If there is a newer state in logs (e.g. SHIPPED or DELIVERED), update it
           if (new Date(log.timestamp) > new Date(ordersMap[orderId].updated_at)) {
             ordersMap[orderId] = log.afterState || log.beforeState;
           }
@@ -467,21 +498,24 @@ async function renderMerchantOrders() {
       }
     });
     
-    const orders = Object.values(ordersMap).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    // Filter orders corresponding to current persona merchant OR if seller u-2 acts
+    const merchantOrders = Object.values(ordersMap)
+      .filter(ord => ord.merchant_id === currentPersonaId || (currentPersonaId === 'u-3' && ord.merchant_id === 'u-2'))
+      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
     
-    if (orders.length === 0) {
+    if (merchantOrders.length === 0) {
       container.innerHTML = `
         <tr>
           <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 2rem;">
             <i class="fa-solid fa-receipt" style="font-size: 2rem; margin-bottom: 0.5rem; display: block; opacity: 0.5;"></i>
-            No transactions registered yet.
+            No active merchant orders.
           </td>
         </tr>
       `;
       return;
     }
     
-    container.innerHTML = orders.map(ord => {
+    container.innerHTML = merchantOrders.map(ord => {
       const prod = products.find(p => p.id === ord.product_id) || { name: 'Unknown Asset' };
       
       let actionBtn = '';
@@ -519,7 +553,6 @@ async function renderMerchantOrders() {
   }
 }
 
-// Add listing
 async function handleAddProduct(e) {
   e.preventDefault();
   
@@ -536,84 +569,147 @@ async function handleAddProduct(e) {
         category,
         price,
         stock,
-        merchantId: 'u-2' // Premium Merchant ID
+        merchantId: currentPersonaId
       })
     });
     
-    // Clear Form
     document.getElementById('add-product-form').reset();
-    
-    // Refresh lists
     await loadCatalogData();
     await refreshMerchantView();
     
-    logToLedger('sys', `[Client Portal] Product listed successfully!`);
     alert('Product successfully published to marketplace catalog.');
   } catch (err) {
     alert(`Failed to add product: ${err.message}`);
   }
 }
 
-// Ship Order
 async function shipOrder(orderId) {
   try {
     await apiRequest(`/orders/${orderId}/ship`, {
       method: 'POST',
-      body: JSON.stringify({ merchantId: 'u-2' })
+      body: JSON.stringify({ merchantId: currentPersonaId })
     });
-    
     await refreshMerchantView();
   } catch (err) {
     alert(`Failed to ship order: ${err.message}`);
   }
 }
 
-// Deliver Order (releases escrow payout)
 async function deliverOrder(orderId) {
   try {
-    // Deliver can be marked by delivery carrier agent role u-3 or buyer
     await apiRequest(`/orders/${orderId}/deliver`, {
       method: 'POST',
-      body: JSON.stringify({ actorId: 'u-3' }) // Admin/Carrier API role
+      body: JSON.stringify({ actorId: currentPersonaId })
     });
-    
     await refreshMerchantView();
   } catch (err) {
     alert(`Failed to complete delivery: ${err.message}`);
   }
 }
 
-// Poll logs & details
+// Admin Panel View Logic
+async function refreshAdminView() {
+  pollSystemUpdates();
+  renderAdminModerationList();
+}
+
+async function renderAdminModerationList() {
+  const container = document.getElementById('admin-products-moderation-body');
+  if (!container) return;
+
+  try {
+    const productsRes = await apiRequest('/products');
+    const prods = productsRes.data.products;
+
+    if (prods.length === 0) {
+      container.innerHTML = `
+        <tr>
+          <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 2rem;">
+            No items active in system catalog.
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    container.innerHTML = prods.map(p => `
+      <tr>
+        <td><strong>${p.id}</strong></td>
+        <td>${escapeHtml(p.name)}</td>
+        <td>${escapeHtml(p.category)}</td>
+        <td>$${p.price.toFixed(2)}</td>
+        <td>${p.stock}</td>
+        <td><code>${p.merchant_id}</code></td>
+        <td>
+          <button class="btn btn-secondary btn-sm" onclick="adminDeleteProduct('${p.id}')" style="border-color: var(--error); color: var(--error);">
+            <i class="fa-solid fa-trash-can"></i> Moderate
+          </button>
+        </td>
+      </tr>
+    `).join('');
+
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+async function adminDeleteProduct(productId) {
+  if (!confirm(`Warning: You are deleting listing "${productId}" as an Administrator. Proceed?`)) return;
+
+  try {
+    await apiRequest(`/products/${productId}`, {
+      method: 'DELETE',
+      body: JSON.stringify({ actorId: currentPersonaId })
+    });
+    
+    await loadCatalogData();
+    await refreshAdminView();
+    alert('Listing successfully purged and soft-deleted from catalog.');
+  } catch (err) {
+    alert(`Moderation failed: ${err.message}`);
+  }
+}
+
+// Real-time Polling & System Balances updates
 async function pollSystemUpdates() {
   try {
-    // Fetch users (balances)
     const usersRes = await fetch(`${API_BASE}/users`);
     if (!usersRes.ok) return;
     const usersData = await usersRes.json();
     const users = usersData.data.users;
     
-    // Update Wallet values
+    // Update Wallet option dropdowns
     const buyer = users.find(u => u.id === 'u-1');
     const merchant = users.find(u => u.id === 'u-2');
+    const admin = users.find(u => u.id === 'u-3');
     
-    if (buyer) {
-      document.getElementById('persona-select').options[0].text = `Alpha Buyer ($${buyer.balance.toFixed(2)})`;
-    }
+    // Update persona dropdown options dynamically
+    const personaSelect = document.getElementById('persona-select');
+    
+    // Update default values
+    if (buyer) personaSelect.options[0].text = `${buyer.name} ($${buyer.balance.toFixed(2)})`;
     if (merchant) {
-      document.getElementById('persona-select').options[1].text = `Premium Merchant ($${merchant.balance.toFixed(2)})`;
+      personaSelect.options[1].text = `${merchant.name} ($${merchant.balance.toFixed(2)})`;
       document.getElementById('merchant-wallet-val').innerText = `$${merchant.balance.toFixed(2)}`;
     }
-    
-    // Fetch audit logs and append new ones to CLI screen
+    if (admin) {
+      personaSelect.options[2].text = `${admin.name} ($${admin.balance.toFixed(2)})`;
+    }
+
+    // Update Admin stats if viewing admin view
+    document.getElementById('admin-total-users-val').innerText = users.length;
+
+    // Fetch logs
     const resLogs = await fetch(`${API_BASE}/audit-logs`);
     if (!resLogs.ok) return;
     const logsData = await resLogs.json();
     const logs = logsData.data.logs;
     
-    // Calculate total escrow volume
+    // Calculate total escrow volume & collected fees
     let escrowTotal = 0;
-    // Iterate through current orders from audit logs
+    let commissionTotal = 0;
     const ordersMap = {};
+
     logs.forEach(log => {
       if (log.entityType === 'order') {
         const orderId = log.entityId;
@@ -626,21 +722,23 @@ async function pollSystemUpdates() {
     });
     
     Object.values(ordersMap).forEach(ord => {
+      commissionTotal += ord.fee_collected;
       if (ord.status === 'PAID' || ord.status === 'SHIPPED') {
         escrowTotal += ord.total_amount;
       }
     });
+
     document.getElementById('merchant-escrow-val').innerText = `$${escrowTotal.toFixed(2)}`;
+    document.getElementById('admin-total-commission-val').innerText = `$${commissionTotal.toFixed(2)}`;
     
-    // Extract new logs (since last check offset)
+    // Print new audit logs into CLI console
     if (logs.length > 0) {
-      const reversedLogs = [...logs].reverse(); // Oldest first
+      const reversedLogs = [...logs].reverse();
       const newLogs = reversedLogs.slice(auditLogsOffset);
       
       newLogs.forEach(log => {
         let text = `[Audit] ${log.action} | Actor: ${log.actor} | Entity: ${log.entityType}:${log.entityId}`;
         
-        // Custom formatting for database state logs
         if (log.action === 'INVENTORY_DEDUCT') {
           text = `[DB Update] Product stock reduced from ${log.beforeState.stock} to ${log.afterState.stock} (Version incremented ${log.beforeState.version} -> ${log.afterState.version})`;
           logToLedger('db', text);
@@ -648,8 +746,11 @@ async function pollSystemUpdates() {
           text = `[DB Update] Buyer balance debited from $${log.beforeState.balance.toFixed(2)} to $${log.afterState.balance.toFixed(2)}`;
           logToLedger('db', text);
         } else if (log.action === 'ESCROW_PAYOUT_MERCHANT') {
-          text = `[Escrow Release] Merchant balance credited from $${log.beforeState.balance.toFixed(2)} to $${log.afterState.balance.toFixed(2)} (Escrow payload released)`;
+          text = `[Escrow Release] Merchant balance credited from $${log.beforeState.balance.toFixed(2)} to $${log.afterState.balance.toFixed(2)} (Escrow payout released)`;
           logToLedger('sys', text);
+        } else if (log.action === 'PRODUCT_DELETE_ADMIN') {
+          text = `[Audit Moderation] Admin purged listing ID ${log.entityId} from catalog. DB status marked deleted.`;
+          logToLedger('err', text);
         } else {
           logToLedger('sys', text);
         }
@@ -659,6 +760,79 @@ async function pollSystemUpdates() {
     }
   } catch (err) {
     console.error(err);
+  }
+}
+
+// Onboarding wizard handlers
+function openOnboarding() {
+  document.getElementById('onboard-modal-overlay').classList.add('active');
+  document.getElementById('onboard-modal').classList.add('active');
+  onboardGoToStep(1);
+  
+  // Clear forms
+  document.getElementById('onboard-username').value = '';
+  document.getElementById('onboard-fullname').value = '';
+  document.getElementById('onboard-role').value = 'buyer';
+  document.getElementById('onboard-funds').value = '10000';
+}
+
+function closeOnboarding() {
+  document.getElementById('onboard-modal-overlay').classList.remove('active');
+  document.getElementById('onboard-modal').classList.remove('active');
+}
+
+function onboardGoToStep(step) {
+  const steps = [1, 2, 3];
+  steps.forEach(s => {
+    document.getElementById(`onboard-step-${s}`).classList.toggle('active', s === step);
+    const indicator = document.getElementById(`onboard-step-${s}-indicator`);
+    if (indicator) indicator.classList.toggle('active', s === step);
+  });
+}
+
+async function submitOnboarding() {
+  const username = document.getElementById('onboard-username').value.trim();
+  const name = document.getElementById('onboard-fullname').value.trim();
+  const role = document.getElementById('onboard-role').value;
+  const balance = parseFloat(document.getElementById('onboard-funds').value);
+
+  if (!username || !name) {
+    alert('Please fill out username and name fields.');
+    onboardGoToStep(1);
+    return;
+  }
+
+  try {
+    const result = await apiRequest('/users/onboard', {
+      method: 'POST',
+      body: JSON.stringify({
+        id: username,
+        name,
+        role,
+        balance
+      })
+    });
+
+    const user = result.data.user;
+    
+    // Append option to select persona dropdown
+    const personaSelect = document.getElementById('persona-select');
+    const option = document.createElement('option');
+    option.value = user.id;
+    option.text = `${user.name} ($${user.balance.toFixed(2)})`;
+    personaSelect.appendChild(option);
+
+    // Switch active persona
+    personaSelect.value = user.id;
+    // Dispatch event to trigger listener
+    personaSelect.dispatchEvent(new Event('change'));
+
+    closeOnboarding();
+    alert(`Success! Onboarded profile "${user.id}" as a ${user.role.toUpperCase()}.`);
+
+  } catch (err) {
+    alert(`Onboarding failed: ${err.message}`);
+    onboardGoToStep(1);
   }
 }
 
@@ -675,7 +849,6 @@ function closePolicy() {
 }
 
 async function fetchPolicy(policy) {
-  // Toggle tabs
   const tabBtns = document.querySelectorAll('.policy-tab-btn');
   tabBtns.forEach(btn => {
     btn.classList.toggle('active', btn.id === `policy-tab-${policy}`);
@@ -693,7 +866,6 @@ async function fetchPolicy(policy) {
     const result = await apiRequest(`/policies/${policy}`);
     document.getElementById('policy-title').innerText = getPolicyTitle(policy);
     
-    // Parse Markdown to HTML for presentation
     contentArea.innerHTML = parseMarkdown(result.data.content);
   } catch (err) {
     contentArea.innerHTML = `
@@ -716,30 +888,20 @@ function getPolicyTitle(policy) {
   }
 }
 
-// Simple regex markdown parsing for high-fidelity legal layout
+// Simple regex markdown parsing
 function parseMarkdown(md) {
   let html = md;
   
-  // Headers
   html = html.replace(/^# (.*?)$/gm, '<h1>$1</h1>');
   html = html.replace(/^## (.*?)$/gm, '<h2>$1</h2>');
   html = html.replace(/^### (.*?)$/gm, '<h3>$1</h3>');
   
-  // Bold
   html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-  
-  // Horizontal lines
   html = html.replace(/^---$/gm, '<hr>');
-  
-  // Bullet items
   html = html.replace(/^- (.*?)$/gm, '<li>$1</li>');
-  
-  // Fix list wrappers
   html = html.replace(/(<li>.*?<\/li>)/gs, '<ul>$1</ul>');
-  // Remove nested uls
   html = html.replace(/<\/ul>\s*<ul>/g, '');
   
-  // Paragraphs (split by double line breaks)
   const paragraphs = html.split(/\n\n+/);
   html = paragraphs.map(p => {
     if (p.trim().startsWith('<h') || p.trim().startsWith('<hr') || p.trim().startsWith('<ul') || p.trim().startsWith('<ul>')) {
@@ -751,7 +913,7 @@ function parseMarkdown(md) {
   return html;
 }
 
-// Escape HTML utility to prevent XSS in sandbox demo
+// Escape HTML utility
 function escapeHtml(string) {
   return String(string).replace(/[&<>"']/g, function (s) {
     switch (s) {

@@ -27,14 +27,25 @@
     </div>
     
     <div class="navbar-actions">
+      <!-- Theme Switcher -->
+      <div class="theme-selector">
+        <button class="theme-btn active" id="theme-btn-dark" onclick="setTheme('dark')" title="Dark Mode"><i class="fa-solid fa-moon"></i></button>
+        <button class="theme-btn" id="theme-btn-light" onclick="setTheme('light')" title="Light Mode"><i class="fa-solid fa-sun"></i></button>
+        <button class="theme-btn" id="theme-btn-system" onclick="setTheme('system')" title="System Sync"><i class="fa-solid fa-desktop"></i></button>
+      </div>
+
       <!-- Persona Swapper -->
       <div class="persona-selector">
         <label for="persona-select"><i class="fa-solid fa-user-gear"></i> Persona:</label>
         <select id="persona-select">
           <option value="u-1">Alpha Buyer ($50,000.00)</option>
           <option value="u-2">Premium Merchant ($1,000.00)</option>
+          <option value="u-3">System Admin ($0.00)</option>
         </select>
       </div>
+
+      <!-- Signup Trigger -->
+      <button class="btn btn-primary btn-sm" onclick="openOnboarding()"><i class="fa-solid fa-user-plus"></i> Join AURA</button>
 
       <!-- Legal Policy Buttons -->
       <button class="btn btn-secondary btn-sm" onclick="openPolicy('TOS')"><i class="fa-solid fa-file-contract"></i> Policies</button>
@@ -51,6 +62,7 @@
   <div class="view-tabs">
     <button class="view-tab active" id="tab-buyer" onclick="switchView('buyer')"><i class="fa-solid fa-store"></i> Buyer Storefront</button>
     <button class="view-tab" id="tab-merchant" onclick="switchView('merchant')"><i class="fa-solid fa-chart-line"></i> Merchant Panel</button>
+    <button class="view-tab" id="tab-admin" onclick="switchView('admin')" style="display:none;"><i class="fa-solid fa-user-shield"></i> Admin Panel</button>
   </div>
 
   <!-- Main Container -->
@@ -165,6 +177,62 @@
             </thead>
             <tbody id="merchant-orders-body">
               <!-- Rendered dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    <!-- ==================== ADMIN DASHBOARD VIEW ==================== -->
+    <section id="admin-view" class="view-section">
+      <div class="merchant-dashboard-grid">
+        <!-- System Health Stats -->
+        <div class="card stat-card admin-summary-card">
+          <h3><i class="fa-solid fa-server"></i> Platform Command Overview</h3>
+          <div class="wallet-balance-row">
+            <div class="balance-item">
+              <span class="lbl">Registered Accounts</span>
+              <span class="val" id="admin-total-users-val">3</span>
+            </div>
+            <div class="balance-item">
+              <span class="lbl">Platform Commission (5%)</span>
+              <span class="val" id="admin-total-commission-val">$0.00</span>
+            </div>
+            <div class="balance-item">
+              <span class="lbl">Platform Status</span>
+              <span class="val" style="color: var(--success); font-size: 1.4rem; font-weight: 700;"><i class="fa-solid fa-circle-check"></i> 99.9% SLA</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- System Controls -->
+        <div class="card add-product-card">
+          <h3><i class="fa-solid fa-sliders"></i> Security Status</h3>
+          <ul style="list-style: none; margin-top: 1rem; font-size: 0.85rem; display: flex; flex-direction: column; gap: 0.75rem;">
+            <li><i class="fa-solid fa-shield-halved" style="color: var(--success);"></i> <strong>Encryption:</strong> AES-256 Enabled</li>
+            <li><i class="fa-solid fa-user-lock" style="color: var(--success);"></i> <strong>Access:</strong> OIDC Roles Enforced</li>
+            <li><i class="fa-solid fa-clock-rotate-left" style="color: var(--success);"></i> <strong>Audits:</strong> Live Stream active</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Catalog Moderation Control -->
+      <div class="card moderation-card" style="margin-top: 2rem;">
+        <h3><i class="fa-solid fa-shield-halved"></i> Global Catalog Moderation</h3>
+        <p class="form-desc" style="margin-bottom: 1rem;">Administrators have administrative authority to moderate product listings, purge items from indices, or force-expire stocks.</p>
+        <div class="orders-table-wrapper">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Product ID</th>
+                <th>Name</th>
+                <th>Category</th>
+                <th>Price</th>
+                <th>Stock</th>
+                <th>Merchant</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="admin-products-moderation-body">
+              <!-- Injected dynamically -->
             </tbody>
           </table>
         </div>
@@ -301,6 +369,74 @@
     </div>
     <div class="modal-content text-left" id="policy-content-area">
       <!-- Injected Policy MD Content -->
+    </div>
+  </div>
+
+  <!-- ==================== ONBOARDING & SIGN-UP MODAL ==================== -->
+  <div class="modal-overlay" id="onboard-modal-overlay"></div>
+  <div class="policy-modal onboarding-modal" id="onboard-modal" style="height: 520px; max-width: 550px;">
+    <div class="modal-header">
+      <h3>Join AURA Network</h3>
+      <button class="close-btn" onclick="closeOnboarding()"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    
+    <!-- Onboarding Step Indicator -->
+    <div class="checkout-steps" id="onboard-steps-bar" style="display: flex;">
+      <div class="step active" id="onboard-step-1-indicator">1. Details</div>
+      <div class="step" id="onboard-step-2-indicator">2. Config</div>
+      <div class="step" id="onboard-step-3-indicator">3. Assets</div>
+    </div>
+
+    <div class="modal-content">
+      <!-- Onboarding Step 1 -->
+      <div class="cart-step-panel active" id="onboard-step-1" style="padding:0;">
+        <h4>Configure User Credentials</h4>
+        <p class="form-desc" style="margin-bottom:1.5rem;">Input unique details to register a user context on the AURA platform.</p>
+        <div class="form-group">
+          <label>Unique User ID</label>
+          <input type="text" id="onboard-username" placeholder="e.g. buyer_99" required>
+        </div>
+        <div class="form-group">
+          <label>Display Name</label>
+          <input type="text" id="onboard-fullname" placeholder="e.g. John Doe" required>
+        </div>
+        <button class="btn btn-primary btn-block btn-lg" onclick="onboardGoToStep(2)" style="margin-top: 1rem;">
+          Next: Platform Role <i class="fa-solid fa-arrow-right"></i>
+        </button>
+      </div>
+
+      <!-- Onboarding Step 2 -->
+      <div class="cart-step-panel" id="onboard-step-2" style="padding:0;">
+        <h4>Select Platform Role</h4>
+        <p class="form-desc" style="margin-bottom:1.5rem;">Choose your transactional tier. Roles determine portal panel views.</p>
+        
+        <div class="form-group">
+          <label>Ecosystem Role</label>
+          <select id="onboard-role" style="background: rgba(255,255,255,0.03); border: 1px solid var(--border);">
+            <option value="buyer">Buyer (Browse catalogs & checkout)</option>
+            <option value="merchant">Merchant (Manage listings & dispatches)</option>
+          </select>
+        </div>
+
+        <div class="button-row" style="margin-top: 2rem;">
+          <button class="btn btn-secondary" onclick="onboardGoToStep(1)"><i class="fa-solid fa-arrow-left"></i> Back</button>
+          <button class="btn btn-primary" onclick="onboardGoToStep(3)">Next: Wallet Seed <i class="fa-solid fa-arrow-right"></i></button>
+        </div>
+      </div>
+
+      <!-- Onboarding Step 3 -->
+      <div class="cart-step-panel" id="onboard-step-3" style="padding:0;">
+        <h4>Seed Wallet Balance</h4>
+        <p class="form-desc" style="margin-bottom:1.5rem;">Input USD balance to fund the platform sandbox wallet ledger.</p>
+        <div class="form-group">
+          <label>Starting Balance ($)</label>
+          <input type="number" id="onboard-funds" min="0" value="10000" step="100">
+        </div>
+        <div class="button-row" style="margin-top: 2rem;">
+          <button class="btn btn-secondary" onclick="onboardGoToStep(2)"><i class="fa-solid fa-arrow-left"></i> Back</button>
+          <button class="btn btn-primary" onclick="submitOnboarding()">Register Identity <i class="fa-solid fa-circle-check"></i></button>
+        </div>
+      </div>
     </div>
   </div>
 

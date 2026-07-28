@@ -64,19 +64,27 @@ router.post('/products', async (req, res, next) => {
   }
 });
 
-// 3. Delete a product (Soft Delete)
+// 3. Delete a product (Soft Delete - supports Admin role override)
 router.delete('/products/:id', async (req, res, next) => {
   try {
     const productId = req.params.id;
-    const { merchantId } = req.body; // In real app, resolved from auth context
+    const { actorId } = req.body; // Represents the deleting user (merchant or admin)
 
-    if (!merchantId) return next(new AppError('Auth required: merchantId must be provided', 401));
+    if (!actorId) return next(new AppError('Auth required: actorId must be provided', 401));
+
+    // Execute check inside database state transaction or read user
+    const dbState = db.read();
+    const user = dbState.users[actorId];
+    if (!user) return next(new AppError('Deleting actor profile not found', 404));
 
     const product = await db.findById('products', productId);
     if (!product) return next(new AppError('Product not found or already deleted', 404));
 
-    if (product.merchant_id !== merchantId) {
-      return next(new AppError('Access denied: You do not own this product listing', 403));
+    const isAdmin = user.role === 'admin';
+    const isOwner = product.merchant_id === actorId;
+
+    if (!isAdmin && !isOwner) {
+      return next(new AppError('Access denied: You must be the listing owner or an Administrator to delete this product', 403));
     }
 
     const beforeState = JSON.parse(JSON.stringify(product));
@@ -89,8 +97,8 @@ router.delete('/products/:id', async (req, res, next) => {
     });
 
     await logAuditAction({
-      actor: merchantId,
-      action: 'PRODUCT_DELETE',
+      actor: actorId,
+      action: isAdmin ? 'PRODUCT_DELETE_ADMIN' : 'PRODUCT_DELETE',
       entityType: 'product',
       entityId: productId,
       beforeState,
@@ -98,7 +106,7 @@ router.delete('/products/:id', async (req, res, next) => {
       req
     });
 
-    res.status(200).json({ status: 'success', message: 'Product successfully soft-deleted.' });
+    res.status(200).json({ status: 'success', message: isAdmin ? 'Product successfully moderated by Admin' : 'Product successfully soft-deleted.' });
   } catch (err) {
     next(err);
   }
@@ -353,6 +361,56 @@ router.get('/policies/:policy', async (req, res, next) => {
 
     const content = fs.readFileSync(filepath, 'utf8');
     res.status(200).json({ status: 'success', data: { policy: policyName, content } });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// 10. User Onboarding & Sign-Up endpoint
+router.post('/users/onboard', async (req, res, next) => {
+  try {
+    const { id, name, role, balance } = req.body;
+
+    if (!id || !name || !role) {
+      return next(new AppError('Missing onboarding parameters: id, name, role', 400));
+    }
+
+    if (role !== 'buyer' && role !== 'merchant') {
+      return next(new AppError('Role must be either "buyer" or "merchant"', 400));
+    }
+
+    const startingBalance = parseFloat(balance) || (role === 'buyer' ? 5000.0 : 0.0);
+    if (isNaN(startingBalance) || startingBalance < 0) {
+      return next(new AppError('Starting balance cannot be negative', 400));
+    }
+
+    const result = await db.executeTransaction(async (state) => {
+      if (state.users[id]) {
+        throw new AppError(`A user with the identity "${id}" is already registered. Please choose another username.`, 409);
+      }
+
+      const userRecord = {
+        id,
+        name,
+        role,
+        balance: startingBalance,
+        created_at: new Date().toISOString()
+      };
+
+      state.users[id] = userRecord;
+      return userRecord;
+    });
+
+    await logAuditAction({
+      actor: id,
+      action: 'USER_ONBOARD',
+      entityType: 'user',
+      entityId: id,
+      afterState: result,
+      req
+    });
+
+    res.status(201).json({ status: 'success', data: { user: result } });
   } catch (err) {
     next(err);
   }

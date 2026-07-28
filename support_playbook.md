@@ -1,4 +1,4 @@
-# AURA MARKETPLACE SUPPORT PLAYBOOK
+# AURA MARKETPLACE SUPPORT PLAYBOOK (PHASE 2)
 
 This playbook outlines operations, diagnostic steps, error mitigation paths, and transaction troubleshooting procedures for AURA Marketplace Customer Support, System Administrators, and Engineering teams.
 
@@ -8,7 +8,7 @@ This playbook outlines operations, diagnostic steps, error mitigation paths, and
 
 AURA is structured as a decoupled web application leveraging a versioned REST API (`/api/v1`) running on Express, connected to a transactional data grid with file-based persistence.
 
-- **Frontend Core**: Rich glassmorphic SPA (`public/index.html`, `public/styles.css`, `public/app.js`).
+- **Frontend Core**: Rich glassmorphic SPA (`public/index.html`, `--light-theme` overlays, `public/app.js`).
 - **Backend API**: Node.js microservices shell (`server/server.js`, `server/routes/api_v1.js`).
 - **Data Engine**: ACID-compliant transactional grid (`server/database.js`).
 - **Audit Logging**: Structured log captures (`server/audit.js`).
@@ -43,34 +43,36 @@ AURA is structured as a decoupled web application leveraging a versioned REST AP
   1. No support action required. Inform the customer that past orders are kept for transaction records.
   2. Confirm that the product is excluded from search by verifying it does not appear in `GET /api/v1/products`.
 
+### Scenario 4: Admin Moderation Purges
+- **Problem**: Merchant complains that their product listing has disappeared.
+- **Technical Explanation**: Administrators (`u-3` or custom admin accounts) can moderate listings. When moderated, a `PRODUCT_DELETE_ADMIN` audit event is logged, and the product is soft-deleted.
+- **Resolution Steps**:
+  1. Search audit logs for `PRODUCT_DELETE_ADMIN` containing the product ID.
+  2. Identify the Admin actor who performed the moderation.
+  3. Reference internal compliance logs for the rationale (e.g., policy violations, inappropriate content).
+
+### Scenario 5: User Onboarding Username Collision
+- **Problem**: A new user receives an onboarding error: *"A user with the identity X is already registered."*
+- **Technical Explanation**: The ID field serves as a unique primary key index in the database. Duplicate entries are blocked at the database boundary to enforce consistency and prevent credential overrides.
+- **Resolution Steps**:
+  1. Direct the user to choose a different, unique handle.
+  2. Confirm the username is indeed occupied by querying `/api/v1/users`.
+
 ---
 
-## 3. System Diagnostic CLI Guide
+## 3. High-Scale Operations & Telemetry
 
-### Viewing System Logs
-To inspect live network requests and database modifications, use the **AURA Architecture Ledger** at the bottom of the dashboard viewport.
-- **`[API Request]`** (Purple): Shows incoming REST transactions with payload parameters.
-- **`[DB Update]`** (Yellow): Shows ACID mutations, including exact stock version changes and balance adjustments.
-- **`[System]`** (Teal): Client-side routing adjustments and lifecycle events.
-- **`[Error]`** (Red): Catches and logs all unified API exceptions.
-
-### Checking Environment Configurations
-1. Access the project directory: `C:\Users\HP\.gemini\antigravity\scratch\fluid-marketplace`
-2. Check `.env.development` (Local Port `8082`, `data.dev.json` db)
-3. Check `.env.production` (Production port, `data.prod.json` db, secure error reporting)
+When scaling AURA to **10-50M daily active users**, support operations utilize the following infrastructure systems:
+- **Cloudflare Edge Analytics**: Monitoring edge KV cache hit-rates (target: >90% hit-rate). Low hit-rates cause database load surges.
+- **CockroachDB Console**: Tracking replication latency across nodes and transaction retry rates. High retry rates suggest locking conflicts on hot product listings.
+- **Kafka Lag Monitoring**: Ensuring the consumers responsible for payment, inventory updates, and notifications are processing events in real time.
 
 ---
 
-## 4. Universal Error Handling Matrix
+## 4. Production Security Checklist
 
-AURA returns standard JSON error responses under the `AppError` class:
-
-| HTTP Status | Error Status | Typical Cause | Resolution |
-| :--- | :--- | :--- | :--- |
-| **400** | `fail` | Missing transaction/product params, invalid numbers | Correct JSON body payload |
-| **401** | `fail` | Unauthorized access (missing client credentials) | Supply valid User ID context |
-| **402** | `fail` | Insufficient funds in buyer wallet | Fund buyer wallet balance |
-| **403** | `fail` | Forbidden (e.g., Merchant trying to ship another vendor's order) | Assert user authorization rights |
-| **404** | `fail` | Product/Order not found or soft-deleted | Verify resource ID exists |
-| **409** | `fail` | Stock depletion or version lock mismatch | Refresh inventory and retry |
-| **500** | `error` | Database write exception or code exception | Contact engineering tier-2 |
+For security audits, verify that the platform enforces the following parameters:
+- **OAuth2 Token Verification**: JWT signatures must be validated by the API Gateway using JWKS endpoints.
+- **Rate-Limiter Rules**: Gateway rejects requests exceeding 100 requests/minute per client IP (returning `429 Too Many Requests`).
+- **SQL Injection Prevention**: Verify all queries pass parameterized inputs.
+- **PCI Scope Compliance**: Verify Stripe SDK tokens are used and no raw PAN (Primary Account Number) logs are captured in audit databases.

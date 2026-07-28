@@ -1,84 +1,64 @@
-# AURA | Fluid E-Commerce Marketplace
+# AURA Marketplace
 
-AURA is a high-fidelity, ultra-premium marketplace application prototype featuring an interactive split-view system: a consumer storefront, merchant portal, and real-time backend ledger simulator.
+AURA is a high-fidelity lifestyle catalog prototype. It features a consumer storefront, merchant dashboard, admin console.
 
-This repository runs a versioned REST API on Express, incorporating database principles like ACID transactional queues, optimistic concurrency locking, soft deletes, and structured audit logs.
+The platform demonstrates modern system architecture. It models strict backend workflows.
 
----
+## Key Architectural Features
 
-## Technical Architecture Overview
+- **API Isolation**: All endpoints start with `/api/v1`.
+- **ACID Transactions**: Memory modifications run sequentially. Operations commit successfully. Failed tasks trigger immediate state rollbacks.
+- **Optimistic Locking**: Product catalog updates check expected version counters. Race conditions trigger transaction aborts.
+- **Soft Deletes**: Deleting products updates a `deleted_at` timestamp. Historical records remain fully intact.
+- **Audit Logging**: Every mutation appends record metrics. Logs detail actor IDs, timestamps, client IPs, state changes.
+- **Environment Separation**: Settings load dynamically from `.env.development`, `.env.production`.
+- **Dynamic Policies**: The frontend loads legal files directly from the server storage.
 
-- **Versioned API Gateway (`/api/v1`)**: Version-isolated HTTP routing.
-- **ACID Database Grid**: Memory-mapped data store with transaction rollback queues.
-- **Optimistic Locking**: Product catalog updates verify expected versions to prevent double-allocation during high-frequency checkouts.
-- **Universal Error Handler (`AppError`)**: Gracefully catches operational errors (balance checks, version conflicts) and formats response messages.
-- **Audit Trails**: Appends all database state mutations to a secure log table, capturing timestamps, actor IDs, actions, and system data states.
-- **Split Environment Configurations**: Load configurations from `.env.development` or `.env.production` depending on `NODE_ENV`.
-- **Integrated Policy Viewer**: Dynamically reads and renders drafted legal documents:
-  - **TOS** (Terms of Service)
-  - **Privacy Policy**
-  - **DPA** (Data Processing Agreement)
-  - **Refund Policy**
-  - **MSA** (Master Service Agreement)
-
----
-
-## File Structure
+## Project File Structure
 
 ```
 fluid-marketplace/
-├── .env.development      # Development environment variables
-├── .env.production       # Production environment variables
-├── .gitignore            # Git exclusion rules
-├── package.json          # Node dependencies (Express, CORS, dotenv, etc.)
-├── README.md             # Repository documentation
-├── support_playbook.md   # Troubleshooting & Support Manual
-├── legal/                # Drafted legal agreements
-│   ├── TOS.md            
-│   ├── PRIVACY.md        
-│   ├── DPA.md            
-│   ├── REFUND.md         
-│   └── MSA.md            
-├── server/               # Backend API server
-│   ├── server.js         # Entrypoint
-│   ├── config.js         # Config Loader
-│   ├── errors.js         # AppError and ErrorHandler middleware
-│   ├── database.js       # Transactional Mock DB
-│   ├── audit.js          # Audit Trail Logging
+├── package.json
+├── README.md
+├── support_playbook.md
+├── legal/
+│   ├── TOS.md
+│   ├── PRIVACY.md
+│   ├── DPA.md
+│   ├── REFUND.md
+│   └── MSA.md
+├── server/
+│   ├── server.js
+│   ├── config.js
+│   ├── errors.js
+│   ├── database.js
+│   ├── audit.js
 │   └── routes/
-│       └── api_v1.js     # Versioned endpoints
-└── public/               # Frontend Client (Sleek Glassmorphic SPA)
-    ├── index.html        
-    ├── styles.css        
-    └── app.js            
+│       └── api_v1.js
+└── public/
+    ├── index.html
+    ├── styles.css
+    └── app.js
 ```
 
----
-
-## Local Setup & Installation
+## Local Setup Instructions
 
 ### 1. Install Dependencies
-Run the package installation command:
+Execute the package installer command:
 ```bash
 npm install
 ```
 
-### 2. Run the Server
-Launch the server in development mode:
+### 2. Launch Local Server
+Start the system listener:
 ```bash
 npm run dev
 ```
 
-The application will start, outputting:
-```
-================================================================
- AURA Marketplace Core API Running in [development] Mode
- Port: 8082 | API Version: /api/v1
- Local Sandbox URL: http://localhost:8082
-================================================================
-```
+The backend launches on port 8085.
 
-### 3. Open in Browser
-Open your browser and navigate to `http://localhost:8082` to view the storefront dashboard.
-- Use the **Persona dropdown** at the top right to switch between **Buyer** and **Merchant** modes.
-- Explore the **AURA Architecture Ledger** at the bottom to watch raw API requests and database logs process in real time!
+### 3. Open Storefront
+Navigate your web browser to:
+`http://localhost:8085`
+
+Select Buyer, Merchant, Admin personas via the selector menu. Switch themes using the nav buttons. Inspect system queries inside the ledger console.
