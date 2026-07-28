@@ -97,3 +97,12 @@ When scaling AURA to **10-50M daily active users**, support operations utilize t
   1. Verify the user's role metadata using the Admin dashboard.
   2. If a merchant has mistakenly registered as a buyer (or vice versa), their role cannot be changed directly in the UI. An administrator must update their user record role attribute directly in the database.
   3. Direct the user to log in with an account that has the appropriate permissions for the requested view.
+
+### Scenario 8: Guest User Checkout Redirection Loop
+- **Problem**: Customer clicks "Next: Shipping & Payment" inside the cart drawer but the cart closes and they are redirected to the Login / Sign Up panel.
+- **Technical Explanation**: AURA supports public guest catalog discovery. Guests can search and add products to their bag anonymously. However, to process orders, they must possess an account context. The frontend intercepts the transition at Cart Step 2 if `currentPersonaId` is empty and redirects them to the auth wizard.
+- **Resolution Steps**:
+  1. Inform the user that guest catalog browsing is allowed, but a registered account is required to check out.
+  2. Direct the user to log in or sign up via the modal.
+  3. Once authenticated, their cart contents are preserved, and they can complete the checkout.
+
