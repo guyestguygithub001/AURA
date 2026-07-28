@@ -17,7 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
   setupEventListeners();
   loadCatalogData();
   initTheme();
-  switchView('buyer');
+  updateNavigationTabs();
   
   // Start polling audit logs & wallet data for real-time ledger representation
   pollSystemUpdates();
@@ -26,7 +26,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Setup Listeners
 function setupEventListeners() {
-  document.getElementById('persona-select').addEventListener('change', (e) => {
+  document.getElementById('persona-select').addEventListener('change', async (e) => {
     currentPersonaId = e.target.value;
     
     // Resolve role based on persona ID
@@ -38,19 +38,11 @@ function setupEventListeners() {
       currentPersonaRole = 'admin';
     } else {
       // Custom onboarded user check
-      checkOnboardedUserRole(currentPersonaId);
+      await checkOnboardedUserRole(currentPersonaId);
     }
     
-    // Toggle Admin Panel Tab Visibility
-    const adminTab = document.getElementById('tab-admin');
-    if (currentPersonaRole === 'admin') {
-      adminTab.style.display = 'inline-flex';
-    } else {
-      adminTab.style.display = 'none';
-      if (activeView === 'admin') {
-        switchView('buyer');
-      }
-    }
+    // Update navigation tabs visibility and switch view based on user role (RBAC)
+    updateNavigationTabs();
 
     logToLedger('sys', `[Client] Switch Persona to: ${currentPersonaId} (Role: ${currentPersonaRole.toUpperCase()})`);
     
@@ -274,6 +266,29 @@ function switchView(view) {
     refreshMerchantView();
   } else if (view === 'admin') {
     refreshAdminView();
+  }
+}
+
+function updateNavigationTabs() {
+  const tabBuyer = document.getElementById('tab-buyer');
+  const tabMerchant = document.getElementById('tab-merchant');
+  const tabAdmin = document.getElementById('tab-admin');
+
+  // Hide all tabs first
+  tabBuyer.style.display = 'none';
+  tabMerchant.style.display = 'none';
+  tabAdmin.style.display = 'none';
+
+  // Toggle visibility based on role
+  if (currentPersonaRole === 'buyer') {
+    tabBuyer.style.display = 'inline-flex';
+    switchView('buyer');
+  } else if (currentPersonaRole === 'merchant') {
+    tabMerchant.style.display = 'inline-flex';
+    switchView('merchant');
+  } else if (currentPersonaRole === 'admin') {
+    tabAdmin.style.display = 'inline-flex';
+    switchView('admin');
   }
 }
 
