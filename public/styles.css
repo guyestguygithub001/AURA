@@ -300,11 +300,12 @@ body {
 }
 .search-icon {
   position: absolute;
-  left: 1.5rem;
+  right: 1.25rem;
+  left: auto;
   top: 50%;
   transform: translateY(-50%);
   color: var(--text-muted);
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   opacity: 0.6;
   pointer-events: none;
 }
@@ -313,7 +314,7 @@ body {
   background: transparent;
   border: 1px solid var(--border);
   border-radius: 4px;
-  padding: 0.75rem 1.5rem 0.75rem 3.5rem;
+  padding: 0.75rem 3.5rem 0.75rem 1.25rem;
   color: var(--text);
   font-family: var(--font-body);
   font-size: 0.85rem;
@@ -325,7 +326,7 @@ body {
 }
 .clear-search {
   position: absolute;
-  right: 0.85rem;
+  right: 2.85rem;
   top: 50%;
   transform: translateY(-50%);
   background: transparent;
