@@ -116,6 +116,9 @@ router.post('/orders', async (req, res, next) => {
     const qty = parseInt(quantity, 10);
     if (isNaN(qty) || qty <= 0) return next(new AppError('Quantity must be a positive integer', 400));
 
+    const expectedVer = parseInt(expectedVersion, 10);
+    if (isNaN(expectedVer)) return next(new AppError('expectedVersion must be an integer', 400));
+
     // Run transaction
     const transactionResult = await db.executeTransaction(async (state) => {
       // 1. Fetch user (buyer)
@@ -136,7 +139,7 @@ router.post('/orders', async (req, res, next) => {
       }
 
       // 4. Optimistic Lock Check (Prevent Race Conditions)
-      if (product.version !== expectedVersion) {
+      if (product.version !== expectedVer) {
         throw new AppError('Product state has updated since you opened the checkout. Please refresh.', 409);
       }
 
