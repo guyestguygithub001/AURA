@@ -34,18 +34,17 @@
         <button class="theme-btn" id="theme-btn-system" onclick="setTheme('system')" title="System Sync"><i class="fa-solid fa-desktop"></i></button>
       </div>
 
-      <!-- Persona Swapper -->
-      <div class="persona-selector">
-        <label for="persona-select"><i class="fa-solid fa-user-gear"></i> Persona:</label>
-        <select id="persona-select">
-          <option value="u-1">Alpha Buyer ($50,000.00)</option>
-          <option value="u-2">Premium Merchant ($1,000.00)</option>
-          <option value="u-3">System Admin ($0.00)</option>
-        </select>
+      <!-- Legacy hidden persona selector (retained for backward compatibility logs) -->
+      <select id="persona-select" style="display: none;"></select>
+
+      <!-- User Session Context Panel -->
+      <div id="user-profile-header" style="display: none; align-items: center; gap: 0.8rem;">
+        <span id="header-user-info" style="font-size: 0.75rem; font-weight: 500; color: var(--text-muted);"></span>
+        <button class="btn btn-secondary btn-sm" onclick="handleLogout()"><i class="fa-solid fa-right-from-bracket"></i> Log Out</button>
       </div>
 
-      <!-- Signup Trigger -->
-      <button class="btn btn-primary btn-sm" onclick="openOnboarding()"><i class="fa-solid fa-user-plus"></i> Join AURA</button>
+      <!-- Authenticate Trigger (Hidden when Logged In) -->
+      <button class="btn btn-primary btn-sm" id="header-auth-btn" onclick="openOnboarding()"><i class="fa-solid fa-right-to-bracket"></i> Log In / Sign Up</button>
 
       <!-- Legal Policy Buttons -->
       <button class="btn btn-secondary btn-sm" onclick="openPolicy('TOS')"><i class="fa-solid fa-file-contract"></i> Policies</button>
@@ -377,7 +376,7 @@
   <div class="policy-modal onboarding-modal" id="onboard-modal" style="height: 600px; max-width: 500px;">
     <div class="modal-header">
       <h3 id="onboard-modal-title">Join AURA Network</h3>
-      <button class="close-btn" onclick="closeOnboarding()"><i class="fa-solid fa-xmark"></i></button>
+      <button class="close-btn" id="onboard-close-btn" onclick="closeOnboarding()"><i class="fa-solid fa-xmark"></i></button>
     </div>
 
     <!-- Toggle between Sign Up and Login modes -->

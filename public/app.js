@@ -1,6 +1,6 @@
 // AURA Fluid Client State Controller
-let currentPersonaId = 'u-1';
-let currentPersonaRole = 'buyer';
+let currentPersonaId = '';
+let currentPersonaRole = '';
 let activeView = 'buyer';
 let activeCategory = 'All';
 let products = [];
@@ -15,56 +15,86 @@ const API_BASE = '/api/v1';
 // Initial Boot
 document.addEventListener('DOMContentLoaded', () => {
   setupEventListeners();
-  loadCatalogData();
   initTheme();
-  updateNavigationTabs();
+  initSession();
   
   // Start polling audit logs & wallet data for real-time ledger representation
-  pollSystemUpdates();
-  setInterval(pollSystemUpdates, 3000);
+  setInterval(() => {
+    if (currentPersonaId) {
+      pollSystemUpdates();
+    }
+  }, 3000);
 });
 
 // Setup Listeners
 function setupEventListeners() {
-  document.getElementById('persona-select').addEventListener('change', async (e) => {
-    currentPersonaId = e.target.value;
-    
-    // Resolve role based on persona ID
-    if (currentPersonaId === 'u-1') {
-      currentPersonaRole = 'buyer';
-    } else if (currentPersonaId === 'u-2') {
-      currentPersonaRole = 'merchant';
-    } else if (currentPersonaId === 'u-3') {
-      currentPersonaRole = 'admin';
-    } else {
-      // Custom onboarded user check
-      await checkOnboardedUserRole(currentPersonaId);
-    }
-    
-    // Update navigation tabs visibility and switch view based on user role (RBAC)
-    updateNavigationTabs();
-
-    logToLedger('sys', `[Client] Switch Persona to: ${currentPersonaId} (Role: ${currentPersonaRole.toUpperCase()})`);
-    
-    // Refresh interfaces
-    loadCatalogData();
-    pollSystemUpdates();
-    if (activeView === 'merchant') refreshMerchantView();
-    if (activeView === 'admin') refreshAdminView();
-  });
+  const personaSelect = document.getElementById('persona-select');
+  if (personaSelect) {
+    personaSelect.addEventListener('change', () => {
+      // Legacy support
+    });
+  }
 }
 
-async function checkOnboardedUserRole(userId) {
-  try {
-    const res = await fetch(`${API_BASE}/users`);
-    const data = await res.json();
-    const user = data.data.users.find(u => u.id === userId);
-    if (user) {
-      currentPersonaRole = user.role;
-    }
-  } catch (err) {
-    console.error(err);
+// Session & Authentication Engine
+function initSession() {
+  const session = localStorage.getItem('aura_session');
+  if (session) {
+    const user = JSON.parse(session);
+    currentPersonaId = user.id;
+    currentPersonaRole = user.role;
+    showUserProfile(user);
+    
+    const closeBtn = document.getElementById('onboard-close-btn');
+    if (closeBtn) closeBtn.style.display = 'block';
+    
+    updateNavigationTabs();
+    loadCatalogData();
+    pollSystemUpdates();
+  } else {
+    currentPersonaId = '';
+    currentPersonaRole = '';
+    
+    const closeBtn = document.getElementById('onboard-close-btn');
+    if (closeBtn) closeBtn.style.display = 'none';
+    
+    setTimeout(() => {
+      openOnboarding();
+      toggleOnboardMode('login');
+    }, 100);
   }
+}
+
+function showUserProfile(user) {
+  const profileHeader = document.getElementById('user-profile-header');
+  const authBtn = document.getElementById('header-auth-btn');
+  const userInfo = document.getElementById('header-user-info');
+  
+  if (profileHeader && authBtn && userInfo) {
+    profileHeader.style.display = 'flex';
+    authBtn.style.display = 'none';
+    userInfo.innerHTML = `<i class="fa-solid fa-user"></i> ${user.name} (${user.role.toUpperCase()}) | <strong style="color: var(--text);">$${user.balance.toFixed(2)}</strong>`;
+  }
+}
+
+function handleLogout() {
+  localStorage.removeItem('aura_session');
+  currentPersonaId = '';
+  currentPersonaRole = '';
+  
+  const profileHeader = document.getElementById('user-profile-header');
+  const authBtn = document.getElementById('header-auth-btn');
+  if (profileHeader && authBtn) {
+    profileHeader.style.display = 'none';
+    authBtn.style.display = 'block';
+  }
+  
+  // Clear catalog and view state
+  products = [];
+  renderProducts();
+  
+  logToLedger('sys', '[Session] User logged out. Clearing active context.');
+  initSession();
 }
 
 // Theme Engine Initialization
@@ -117,6 +147,7 @@ async function apiRequest(endpoint, options = {}) {
       ...options,
       headers: {
         'Content-Type': 'application/json',
+        'X-Aura-User-Id': currentPersonaId, // Secure Header Injection
         ...options.headers
       }
     });
@@ -688,90 +719,90 @@ async function adminDeleteProduct(productId) {
 // Real-time Polling & System Balances updates
 async function pollSystemUpdates() {
   try {
-    const usersRes = await fetch(`${API_BASE}/users`);
-    if (!usersRes.ok) return;
-    const usersData = await usersRes.json();
+    const usersData = await apiRequest('/users');
     const users = usersData.data.users;
     
-    // Update Wallet option dropdowns
-    const buyer = users.find(u => u.id === 'u-1');
-    const merchant = users.find(u => u.id === 'u-2');
-    const admin = users.find(u => u.id === 'u-3');
-    
-    // Update persona dropdown options dynamically
-    const personaSelect = document.getElementById('persona-select');
-    
-    // Update default values
-    if (buyer) personaSelect.options[0].text = `${buyer.name} ($${buyer.balance.toFixed(2)})`;
-    if (merchant) {
-      personaSelect.options[1].text = `${merchant.name} ($${merchant.balance.toFixed(2)})`;
-      document.getElementById('merchant-wallet-val').innerText = `$${merchant.balance.toFixed(2)}`;
-    }
-    if (admin) {
-      personaSelect.options[2].text = `${admin.name} ($${admin.balance.toFixed(2)})`;
+    // Find active user profile
+    const activeUser = users.find(u => u.id === currentPersonaId);
+    if (activeUser) {
+      // Update wallet details in header profile context dynamically
+      const userInfo = document.getElementById('header-user-info');
+      if (userInfo) {
+        userInfo.innerHTML = `<i class="fa-solid fa-user"></i> ${activeUser.name} (${activeUser.role.toUpperCase()}) | <strong style="color: var(--text);">$${activeUser.balance.toFixed(2)}</strong>`;
+      }
+      
+      // Update Merchant specific views balance if applicable
+      if (activeUser.role === 'merchant') {
+        const merchantWallet = document.getElementById('merchant-wallet-val');
+        if (merchantWallet) merchantWallet.innerText = `$${activeUser.balance.toFixed(2)}`;
+      }
     }
 
     // Update Admin stats if viewing admin view
-    document.getElementById('admin-total-users-val').innerText = users.length;
+    const adminTotalUsers = document.getElementById('admin-total-users-val');
+    if (adminTotalUsers) adminTotalUsers.innerText = users.length;
 
-    // Fetch logs
-    const resLogs = await fetch(`${API_BASE}/audit-logs`);
-    if (!resLogs.ok) return;
-    const logsData = await resLogs.json();
-    const logs = logsData.data.logs;
-    
-    // Calculate total escrow volume & collected fees
-    let escrowTotal = 0;
-    let commissionTotal = 0;
-    const ordersMap = {};
-
-    logs.forEach(log => {
-      if (log.entityType === 'order') {
-        const orderId = log.entityId;
-        if (!ordersMap[orderId]) {
-          ordersMap[orderId] = log.afterState || log.beforeState;
-        } else if (new Date(log.timestamp) > new Date(ordersMap[orderId].updated_at)) {
-          ordersMap[orderId] = log.afterState || log.beforeState;
-        }
-      }
-    });
-    
-    Object.values(ordersMap).forEach(ord => {
-      commissionTotal += ord.fee_collected;
-      if (ord.status === 'PAID' || ord.status === 'SHIPPED') {
-        escrowTotal += ord.total_amount;
-      }
-    });
-
-    document.getElementById('merchant-escrow-val').innerText = `$${escrowTotal.toFixed(2)}`;
-    document.getElementById('admin-total-commission-val').innerText = `$${commissionTotal.toFixed(2)}`;
-    
-    // Print new audit logs into CLI console
-    if (logs.length > 0) {
-      const reversedLogs = [...logs].reverse();
-      const newLogs = reversedLogs.slice(auditLogsOffset);
+    // Fetch and sync audit logs only if authenticated as system Administrator (RBAC Guard)
+    if (currentPersonaRole === 'admin') {
+      const logsData = await apiRequest('/audit-logs');
+      const logs = logsData.data.logs;
       
-      newLogs.forEach(log => {
-        let text = `[Audit] ${log.action} | Actor: ${log.actor} | Entity: ${log.entityType}:${log.entityId}`;
-        
-        if (log.action === 'INVENTORY_DEDUCT') {
-          text = `[DB Update] Product stock reduced from ${log.beforeState.stock} to ${log.afterState.stock} (Version incremented ${log.beforeState.version} -> ${log.afterState.version})`;
-          logToLedger('db', text);
-        } else if (log.action === 'BALANCE_DEDUCT') {
-          text = `[DB Update] Buyer balance debited from $${log.beforeState.balance.toFixed(2)} to $${log.afterState.balance.toFixed(2)}`;
-          logToLedger('db', text);
-        } else if (log.action === 'ESCROW_PAYOUT_MERCHANT') {
-          text = `[Escrow Release] Merchant balance credited from $${log.beforeState.balance.toFixed(2)} to $${log.afterState.balance.toFixed(2)} (Escrow payout released)`;
-          logToLedger('sys', text);
-        } else if (log.action === 'PRODUCT_DELETE_ADMIN') {
-          text = `[Audit Moderation] Admin purged listing ID ${log.entityId} from catalog. DB status marked deleted.`;
-          logToLedger('err', text);
-        } else {
-          logToLedger('sys', text);
+      // Calculate total escrow volume & collected fees
+      let escrowTotal = 0;
+      let commissionTotal = 0;
+      const ordersMap = {};
+
+      logs.forEach(log => {
+        if (log.entityType === 'order') {
+          const orderId = log.entityId;
+          if (!ordersMap[orderId]) {
+            ordersMap[orderId] = log.afterState || log.beforeState;
+          } else if (new Date(log.timestamp) > new Date(ordersMap[orderId].updated_at)) {
+            ordersMap[orderId] = log.afterState || log.beforeState;
+          }
         }
       });
       
-      auditLogsOffset = logs.length;
+      Object.values(ordersMap).forEach(ord => {
+        commissionTotal += ord.fee_collected;
+        if (ord.status === 'PAID' || ord.status === 'SHIPPED') {
+          escrowTotal += ord.total_amount;
+        }
+      });
+
+      const merchantEscrow = document.getElementById('merchant-escrow-val');
+      if (merchantEscrow) merchantEscrow.innerText = `$${escrowTotal.toFixed(2)}`;
+      
+      const adminTotalCommission = document.getElementById('admin-total-commission-val');
+      if (adminTotalCommission) adminTotalCommission.innerText = `$${commissionTotal.toFixed(2)}`;
+      
+      // Print new audit logs into CLI console
+      if (logs.length > 0) {
+        const reversedLogs = [...logs].reverse();
+        const newLogs = reversedLogs.slice(auditLogsOffset);
+        
+        newLogs.forEach(log => {
+          let text = `[Audit] ${log.action} | Actor: ${log.actor} | Entity: ${log.entityType}:${log.entityId}`;
+          
+          if (log.action === 'INVENTORY_DEDUCT') {
+            text = `[DB Update] Product stock reduced from ${log.beforeState.stock} to ${log.afterState.stock} (Version incremented ${log.beforeState.version} -> ${log.afterState.version})`;
+            logToLedger('db', text);
+          } else if (log.action === 'BALANCE_DEDUCT') {
+            text = `[DB Update] Buyer balance debited from $${log.beforeState.balance.toFixed(2)} to $${log.afterState.balance.toFixed(2)}`;
+            logToLedger('db', text);
+          } else if (log.action === 'ESCROW_PAYOUT_MERCHANT') {
+            text = `[Escrow Release] Merchant balance credited from $${log.beforeState.balance.toFixed(2)} to $${log.afterState.balance.toFixed(2)} (Escrow payout released)`;
+            logToLedger('sys', text);
+          } else if (log.action === 'PRODUCT_DELETE_ADMIN') {
+            text = `[Audit Moderation] Admin purged listing ID ${log.entityId} from catalog. DB status marked deleted.`;
+            logToLedger('err', text);
+          } else {
+            logToLedger('sys', text);
+          }
+        });
+        
+        auditLogsOffset = logs.length;
+      }
     }
   } catch (err) {
     console.error(err);
@@ -886,26 +917,25 @@ async function submitLogin() {
 
     const user = result.data.user;
 
-    // Check if user option already exists in dropdown
-    const personaSelect = document.getElementById('persona-select');
-    let exists = false;
-    for (let i = 0; i < personaSelect.options.length; i++) {
-      if (personaSelect.options[i].value === user.id) {
-        exists = true;
-        break;
-      }
-    }
+    // Save session context to localStorage
+    localStorage.setItem('aura_session', JSON.stringify(user));
+    
+    currentPersonaId = user.id;
+    currentPersonaRole = user.role;
 
-    if (!exists) {
-      const option = document.createElement('option');
-      option.value = user.id;
-      option.text = `${user.name} ($${user.balance.toFixed(2)})`;
-      personaSelect.appendChild(option);
-    }
+    // Display profile details in header
+    showUserProfile(user);
 
-    // Authenticate and set active user session context
-    personaSelect.value = user.id;
-    personaSelect.dispatchEvent(new Event('change'));
+    // Enable close button on auth modal
+    const closeBtn = document.getElementById('onboard-close-btn');
+    if (closeBtn) closeBtn.style.display = 'block';
+
+    // Update navigation dashboards separation (RBAC)
+    updateNavigationTabs();
+    
+    // Load datasets
+    loadCatalogData();
+    pollSystemUpdates();
 
     closeOnboarding();
     alert(`Authenticated! Welcome back, ${user.name}.`);

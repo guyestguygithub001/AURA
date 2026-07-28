@@ -6,8 +6,38 @@ const db = require('../database');
 const { AppError } = require('../errors');
 const { logAuditAction } = require('../audit');
 
+// Authentication & Authorization middlewares
+const requireAuth = async (req, res, next) => {
+  const userId = req.headers['x-aura-user-id'];
+  if (!userId) {
+    return next(new AppError('Unauthorized: Missing X-Aura-User-Id credentials header', 401));
+  }
+  
+  const user = await db.findById('users', userId);
+  if (!user) {
+    return next(new AppError('Unauthorized: Authenticated user context not found', 401));
+  }
+  
+  req.user = user;
+  next();
+};
+
+const requireRole = (roles) => {
+  return (req, res, next) => {
+    if (!req.user) {
+      return next(new AppError('Unauthorized: User session not established', 401));
+    }
+    
+    const hasRole = Array.isArray(roles) ? roles.includes(req.user.role) : req.user.role === roles;
+    if (!hasRole) {
+      return next(new AppError(`Forbidden: Access denied. Action requires role: ${roles}`, 403));
+    }
+    next();
+  };
+};
+
 // 1. Get all products (Active only - Soft Delete filter)
-router.get('/products', async (req, res, next) => {
+router.get('/products', requireAuth, async (req, res, next) => {
   try {
     const products = await db.findAll('products');
     res.status(200).json({ status: 'success', results: products.length, data: { products } });
@@ -17,12 +47,13 @@ router.get('/products', async (req, res, next) => {
 });
 
 // 2. Create a product (Merchant listings)
-router.post('/products', async (req, res, next) => {
+router.post('/products', requireAuth, requireRole('merchant'), async (req, res, next) => {
   try {
-    const { name, category, price, stock, merchantId } = req.body;
+    const { name, category, price, stock } = req.body;
+    const merchantId = req.user.id; // Taken securely from headers context
 
-    if (!name || !category || price === undefined || stock === undefined || !merchantId) {
-      return next(new AppError('Missing required product parameters: name, category, price, stock, merchantId', 400));
+    if (!name || !category || price === undefined || stock === undefined) {
+      return next(new AppError('Missing required product parameters: name, category, price, stock', 400));
     }
 
     const priceNum = parseFloat(price);
@@ -65,17 +96,11 @@ router.post('/products', async (req, res, next) => {
 });
 
 // 3. Delete a product (Soft Delete - supports Admin role override)
-router.delete('/products/:id', async (req, res, next) => {
+router.delete('/products/:id', requireAuth, async (req, res, next) => {
   try {
     const productId = req.params.id;
-    const { actorId } = req.body; // Represents the deleting user (merchant or admin)
-
-    if (!actorId) return next(new AppError('Auth required: actorId must be provided', 401));
-
-    // Execute check inside database state transaction or read user
-    const dbState = db.read();
-    const user = dbState.users[actorId];
-    if (!user) return next(new AppError('Deleting actor profile not found', 404));
+    const user = req.user; // Resolved securely from headers context
+    const actorId = user.id;
 
     const product = await db.findById('products', productId);
     if (!product) return next(new AppError('Product not found or already deleted', 404));
@@ -113,12 +138,13 @@ router.delete('/products/:id', async (req, res, next) => {
 });
 
 // 4. Place an order (ACID Transaction with Stock Lock Check)
-router.post('/orders', async (req, res, next) => {
+router.post('/orders', requireAuth, requireRole('buyer'), async (req, res, next) => {
   try {
-    const { buyerId, productId, quantity, expectedVersion } = req.body;
+    const { productId, quantity, expectedVersion } = req.body;
+    const buyerId = req.user.id; // Securely resolved from header session context
 
-    if (!buyerId || !productId || !quantity || expectedVersion === undefined) {
-      return next(new AppError('Missing transaction parameters: buyerId, productId, quantity, expectedVersion', 400));
+    if (!productId || !quantity || expectedVersion === undefined) {
+      return next(new AppError('Missing transaction parameters: productId, quantity, expectedVersion', 400));
     }
 
     const qty = parseInt(quantity, 10);
@@ -233,12 +259,10 @@ router.post('/orders', async (req, res, next) => {
 });
 
 // 5. Merchant Ship order
-router.post('/orders/:id/ship', async (req, res, next) => {
+router.post('/orders/:id/ship', requireAuth, requireRole('merchant'), async (req, res, next) => {
   try {
     const orderId = req.params.id;
-    const { merchantId } = req.body;
-
-    if (!merchantId) return next(new AppError('merchantId must be specified', 400));
+    const merchantId = req.user.id; // Securely resolved from header session context
 
     const result = await db.executeTransaction(async (state) => {
       const order = state.orders[orderId];
@@ -270,12 +294,23 @@ router.post('/orders/:id/ship', async (req, res, next) => {
 });
 
 // 6. Carrier/Buyer mark delivered (Escrow payout Release)
-router.post('/orders/:id/deliver', async (req, res, next) => {
+router.post('/orders/:id/deliver', requireAuth, async (req, res, next) => {
   try {
     const orderId = req.params.id;
-    const { actorId } = req.body; // Can be carrier API or buyer confirmation
+    const user = req.user; // Resolved securely from headers context
+    const actorId = user.id;
 
-    if (!actorId) return next(new AppError('actorId must be provided', 400));
+    // Validate access permission before proceeding
+    const currentOrder = db.read().orders[orderId];
+    if (!currentOrder) return next(new AppError('Order not found', 404));
+
+    const isAdmin = user.role === 'admin';
+    const isBuyer = currentOrder.buyer_id === actorId;
+    const isMerchant = currentOrder.merchant_id === actorId;
+
+    if (!isAdmin && !isBuyer && !isMerchant) {
+      return next(new AppError('Access denied: You are not authorized to complete delivery for this order', 403));
+    }
 
     const result = await db.executeTransaction(async (state) => {
       const order = state.orders[orderId];
@@ -324,7 +359,7 @@ router.post('/orders/:id/deliver', async (req, res, next) => {
 });
 
 // 7. Get users data (For sandbox visualization)
-router.get('/users', async (req, res, next) => {
+router.get('/users', requireAuth, async (req, res, next) => {
   try {
     const data = db.read();
     res.status(200).json({ status: 'success', data: { users: Object.values(data.users) } });
@@ -334,7 +369,7 @@ router.get('/users', async (req, res, next) => {
 });
 
 // 8. Get audit logs list (Admin console)
-router.get('/audit-logs', async (req, res, next) => {
+router.get('/audit-logs', requireAuth, requireRole('admin'), async (req, res, next) => {
   try {
     const data = db.read();
     // Sort logs descending by timestamp

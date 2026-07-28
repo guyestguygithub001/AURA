@@ -71,8 +71,29 @@ When scaling AURA to **10-50M daily active users**, support operations utilize t
 
 ## 4. Production Security Checklist
 
-For security audits, verify that the platform enforces the following parameters:
-- **OAuth2 Token Verification**: JWT signatures must be validated by the API Gateway using JWKS endpoints.
+- **API Header Authentication**: All client-side requests must append the secure identity token header (`X-Aura-User-Id`). Raw anonymous calls (except `/users/onboard` and `/users/login`) are blocked.
+- **Backend Actor Resolution**: Endpoint handlers must resolve the active actor (`buyer_id`, `merchant_id`) directly from the verified header context (`req.user.id`) rather than request payloads, preventing parameter spoofing.
+- **OAuth2 Token Verification**: In production, JWT signatures must be validated by the API Gateway using JWKS endpoints.
 - **Rate-Limiter Rules**: Gateway rejects requests exceeding 100 requests/minute per client IP (returning `429 Too Many Requests`).
 - **SQL Injection Prevention**: Verify all queries pass parameterized inputs.
 - **PCI Scope Compliance**: Verify Stripe SDK tokens are used and no raw PAN (Primary Account Number) logs are captured in audit databases.
+
+---
+
+## 5. Security & RBAC Support Workflows
+
+### Scenario 6: 401 Unauthorized Response
+- **Problem**: User receives an error popup: *"Unauthorized: Missing X-Aura-User-Id credentials header"* or *"Unauthorized: Authenticated user context not found"*.
+- **Technical Explanation**: The API request was intercepted by the `requireAuth` middleware because the custom header was missing or the stored user ID did not match a record in the database.
+- **Resolution Steps**:
+  1. Inspect if the user's local session has expired or been corrupted in their browser's `localStorage` cache.
+  2. Direct the user to **Log Out** and perform a fresh login to re-establish a valid session token.
+  3. If the user was recently registered, query `GET /api/v1/users` (Admin only) to verify their identity record exists in the database.
+
+### Scenario 7: 403 Forbidden Response (RBAC Guard Violation)
+- **Problem**: User receives an error: *"Forbidden: Access denied. Action requires role: X"*.
+- **Technical Explanation**: The authenticated user successfully resolved their identity but did not possess the required ecosystem role (e.g. a `buyer` attempting to call `POST /api/v1/products` or a `merchant` attempting to browse admin audit logs).
+- **Resolution Steps**:
+  1. Verify the user's role metadata using the Admin dashboard.
+  2. If a merchant has mistakenly registered as a buyer (or vice versa), their role cannot be changed directly in the UI. An administrator must update their user record role attribute directly in the database.
+  3. Direct the user to log in with an account that has the appropriate permissions for the requested view.
