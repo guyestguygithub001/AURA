@@ -336,15 +336,21 @@ function updateNavigationTabs() {
 }
 
 // Search bar filters
-function handleSearch() {
+function handleSearch(immediate = false) {
   const searchVal = document.getElementById('search-input').value;
   document.getElementById('clear-search-btn').style.display = searchVal ? 'block' : 'none';
   
   if (searchDebounceTimer) clearTimeout(searchDebounceTimer);
-  searchDebounceTimer = setTimeout(() => {
-    logToLedger('sys', `[Client Search] Query debounced: "${searchVal}"`);
+  
+  if (immediate) {
+    logToLedger('sys', `[Client Search] Query immediate trigger: "${searchVal}"`);
     renderProducts();
-  }, 200);
+  } else {
+    searchDebounceTimer = setTimeout(() => {
+      logToLedger('sys', `[Client Search] Query debounced: "${searchVal}"`);
+      renderProducts();
+    }, 200);
+  }
 }
 
 function clearSearch() {

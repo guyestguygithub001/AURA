@@ -307,7 +307,15 @@ body {
   color: var(--text-muted);
   font-size: 0.85rem;
   opacity: 0.6;
-  pointer-events: none;
+  cursor: pointer;
+  transition: var(--transition);
+}
+.search-icon:hover {
+  color: var(--text);
+  opacity: 1;
+}
+.search-icon:active {
+  transform: translateY(-50%) scale(0.9);
 }
 .search-input-wrapper input {
   width: 100%;
