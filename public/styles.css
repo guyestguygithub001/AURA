@@ -1008,11 +1008,32 @@ input:focus, select:focus {
   letter-spacing: 0.5px;
 }
 .onboarding-modal input[type="text"],
-.onboarding-modal input[type="password"],
-.onboarding-modal select {
+.onboarding-modal input[type="password"] {
   padding: 0.6rem 0.8rem;
   font-size: 0.85rem;
   border-radius: 4px;
+}
+
+.onboarding-modal select {
+  width: 100%;
+  padding: 0.6rem 2.2rem 0.6rem 0.8rem;
+  font-size: 0.85rem;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  background-color: transparent;
+  color: var(--text);
+  outline: none;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg fill='white' height='24' viewBox='0 0 24 24' width='24' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/><path d='M0 0h24v24H0z' fill='none'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 1.1rem;
+}
+
+body.light-theme .onboarding-modal select {
+  background-image: url("data:image/svg+xml;utf8,<svg fill='black' height='24' viewBox='0 0 24 24' width='24' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/><path d='M0 0h24v24H0z' fill='none'/></svg>");
 }
 .onboarding-modal .button-row,
 .onboarding-modal .btn-block {
