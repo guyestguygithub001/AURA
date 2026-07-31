@@ -1189,8 +1189,8 @@ body.light-theme .onboarding-modal select {
 /* Dynamic Cartoon Shopper Illustration (Young Boy Side Art) */
 .landing-overlay .illustration-container {
   position: relative;
-  width: 440px;
-  height: 440px;
+  width: 360px;
+  height: 360px;
   z-index: 1;
   pointer-events: none;
   opacity: 0.95; /* High quality, crisp representation */
