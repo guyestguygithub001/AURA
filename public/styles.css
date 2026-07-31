@@ -1155,52 +1155,68 @@ body.light-theme .onboarding-modal select {
 .landing-content {
   position: relative;
   z-index: 5;
-  text-align: center;
-  max-width: 600px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 5rem;
+  max-width: 1100px;
+  width: 90%;
   padding: 2rem;
+  text-align: left; /* Left align typography for editor landing layout */
   transform-style: preserve-3d;
+}
+.landing-text-block {
+  flex: 1.2;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start; /* Left align content elements */
 }
 .landing-logo-container {
   margin-bottom: 2rem;
   transform-style: preserve-3d;
 }
 
-/* Animated Faded Shopping Illustration (Background Accent) */
+/* Parallax wrapper tracking real-time cursor offsets */
+.landing-overlay .illustration-parallax-wrapper {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: translate3d(var(--parallax-x, 0px), var(--parallax-y, 0px), 0);
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 1s var(--transition);
+}
+
+/* Dynamic Cartoon Shopper Illustration (Young Boy Side Art) */
 .landing-overlay .illustration-container {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 480px;
-  height: 480px;
+  position: relative;
+  width: 440px;
+  height: 440px;
   z-index: 1;
   pointer-events: none;
-  opacity: 0.15; /* Clean faded cartoon backdrop */
-  mix-blend-mode: multiply;
-  animation: floatIllustration 10s infinite ease-in-out;
-  transition: opacity 1s var(--transition), transform 1s var(--transition);
+  opacity: 0.95; /* High quality, crisp representation */
+  animation: floatIllustration 8s infinite ease-in-out;
 }
 
 .landing-overlay .happy-shopper-img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
-  border-radius: 50%;
+  object-fit: contain; /* Preserves vector transparency borders */
+  border-radius: 16px;
 }
 
 @keyframes floatIllustration {
   0%, 100% {
-    transform: translate(-50%, -50%) translateY(0px) rotate(0deg);
+    transform: translateY(0px) rotate(0deg);
   }
   50% {
-    transform: translate(-50%, -50%) translateY(-15px) rotate(2deg);
+    transform: translateY(-12px) rotate(1.5deg);
   }
 }
 
 /* Shift out illustration on explore trigger click */
-.landing-overlay.shifting .illustration-container {
+.landing-overlay.shifting .illustration-parallax-wrapper {
   opacity: 0;
-  transform: translate(-50%, -50%) scale(1.15) translateY(-50px);
+  transform: translate3d(var(--parallax-x, 0px), var(--parallax-y, 0px), 0) scale(0.92) translateY(-40px);
 }
 
 /* Typography contrast settings for white layout */
@@ -1220,7 +1236,7 @@ body.light-theme .onboarding-modal select {
   width: 60px;
   height: 1px;
   background-color: rgba(9, 9, 11, 0.15) !important;
-  margin: 1.5rem auto 0 auto;
+  margin: 1.5rem 0 0 0; /* Left align divider */
   transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .landing-overlay .landing-content:hover .landing-divider {
@@ -1436,4 +1452,27 @@ body.light-theme .logo-motion-graphic {
 .landing-overlay .draft-corner {
   border-color: #09090b;
   opacity: 0.12;
+}
+
+/* Responsive side-by-side landing styles stack */
+@media (max-width: 992px) {
+  .landing-content {
+    flex-direction: column-reverse;
+    text-align: center;
+    gap: 3rem;
+  }
+  .landing-text-block {
+    align-items: center;
+  }
+  .landing-overlay .landing-title {
+    font-size: 4rem;
+    letter-spacing: 8px;
+  }
+  .landing-overlay .landing-divider {
+    margin: 1.5rem auto 0 auto;
+  }
+  .landing-overlay .illustration-container {
+    width: 320px;
+    height: 320px;
+  }
 }
