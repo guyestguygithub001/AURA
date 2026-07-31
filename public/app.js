@@ -17,6 +17,13 @@ document.addEventListener('DOMContentLoaded', () => {
   setupEventListeners();
   initTheme();
   initSession();
+
+  // Check landing page sessionStorage cache
+  const landingViewed = sessionStorage.getItem('aura_landing_viewed');
+  const hero = document.getElementById('landing-hero-view');
+  if (landingViewed === 'true' && hero) {
+    hero.style.display = 'none';
+  }
   
   // Start polling audit logs & wallet data for real-time ledger representation
   setInterval(() => {
@@ -25,6 +32,18 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }, 3000);
 });
+
+// Enter storefront transition
+window.enterAURAStorefront = function() {
+  const hero = document.getElementById('landing-hero-view');
+  if (hero) {
+    hero.classList.add('fade-out');
+    sessionStorage.setItem('aura_landing_viewed', 'true');
+    setTimeout(() => {
+      hero.style.display = 'none';
+    }, 800);
+  }
+};
 
 // Setup Listeners
 function setupEventListeners() {

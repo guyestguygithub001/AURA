@@ -1129,3 +1129,118 @@ body.light-theme .onboarding-modal select {
   transform: scale(0.96);
 }
 
+/* Landing page full-screen overlay styles */
+.landing-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: var(--bg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.landing-overlay.fade-out {
+  opacity: 0;
+  transform: translateY(-30px);
+  pointer-events: none;
+}
+.landing-content {
+  text-align: center;
+  max-width: 600px;
+  padding: 2rem;
+}
+.landing-logo-container {
+  margin-bottom: 2rem;
+}
+@keyframes fadeInTitle {
+  from {
+    opacity: 0;
+    transform: translateY(15px);
+    letter-spacing: 20px;
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    letter-spacing: 12px;
+  }
+}
+.landing-title {
+  font-family: var(--font-header);
+  font-size: 5rem;
+  font-weight: 800;
+  letter-spacing: 12px;
+  text-transform: uppercase;
+  color: var(--text);
+  line-height: 1;
+  animation: fadeInTitle 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+.landing-divider {
+  width: 60px;
+  height: 1px;
+  background-color: var(--border-focus);
+  margin: 1.5rem auto 0 auto;
+  transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.landing-content:hover .landing-divider {
+  width: 120px;
+}
+@keyframes fadeInSubtitle {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 0.8;
+  }
+}
+.landing-subtitle {
+  font-size: 0.95rem;
+  color: var(--text-muted);
+  margin-bottom: 3rem;
+  line-height: 1.6;
+  opacity: 0;
+  animation: fadeInSubtitle 1.2s cubic-bezier(0.16, 1, 0.3, 1) 0.3s forwards;
+}
+.landing-enter-btn {
+  background: var(--text);
+  color: var(--bg);
+  border: 1px solid var(--text);
+  padding: 0.85rem 2rem;
+  border-radius: 4px;
+  font-family: var(--font-header);
+  font-weight: 500;
+  font-size: 0.85rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.landing-enter-btn:hover {
+  background: transparent;
+  color: var(--text);
+  border-color: var(--border-focus);
+  transform: translateY(-2px);
+}
+.landing-enter-btn i {
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.landing-enter-btn:hover i {
+  transform: translateX(4px);
+}
+.landing-enter-btn:active {
+  transform: scale(0.96);
+}
+.landing-footer {
+  position: absolute;
+  bottom: 2.5rem;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: var(--text-muted);
+  opacity: 0.5;
+}
