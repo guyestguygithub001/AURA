@@ -1157,26 +1157,26 @@ body.light-theme .onboarding-modal select {
   z-index: 5;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 5rem;
+  justify-content: flex-start; /* Pull text block tight against illustration */
+  gap: 2rem;                   /* Reduced column gap between boy and text */
   max-width: 1100px;
   width: 90%;
   padding: 2rem;
-  text-align: center; /* Center align typography for balanced layout */
+  text-align: center;
   transform-style: preserve-3d;
 }
 .landing-text-block {
-  flex: 1.2;
+  flex: 1;
   display: flex;
   flex-direction: column;
-  align-items: center; /* Center elements in column */
+  align-items: center;
 }
 .landing-logo-container {
-  margin-bottom: 2rem;
+  margin-bottom: 0.75rem; /* Tighter gap between AURA title and subtitle */
   transform-style: preserve-3d;
   display: flex;
   flex-direction: column;
-  align-items: center; /* Center title and divider */
+  align-items: center;
 }
 
 /* Parallax wrapper tracking real-time cursor offsets */
