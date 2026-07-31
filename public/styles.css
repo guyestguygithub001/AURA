@@ -1250,9 +1250,13 @@ body.light-theme .onboarding-modal select {
 .landing-overlay .landing-subtitle {
   font-size: 0.95rem;
   color: #52525b !important;
-  margin-bottom: 1.5rem; /* Reduced gap before enter CTA button */
+  margin-bottom: 1.5rem;
   line-height: 1.6;
   opacity: 0;
+  max-width: 440px;   /* Clean readable width constraints */
+  text-align: right;  /* Right align individual text lines */
+  margin-left: auto;  /* Flush block rightward */
+  margin-right: 0;
   animation: fadeInSubtitle 1.2s cubic-bezier(0.16, 1, 0.3, 1) 0.4s forwards;
 }
 
@@ -1432,6 +1436,17 @@ body.light-theme .logo-motion-graphic {
 @keyframes rotateCounterClockwise {
   from { transform: translate(-50%, -50%) rotate(0deg); }
   to { transform: translate(-50%, -50%) rotate(-360deg); }
+}
+
+@keyframes fadeInSubtitle {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 0.85;
+    transform: translateY(0);
+  }
 }
 
 /* Explicit vector graphic color mapping for white background overlay */
