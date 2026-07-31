@@ -1270,8 +1270,8 @@ body.light-theme .onboarding-modal select {
 .landing-overlay .landing-subtitle {
   font-size: 0.95rem;
   color: #52525b !important;
-  margin-top: 0.25rem;   /* Minimal breathing room — sits flush under AURA */
-  margin-bottom: 1.4rem;
+  margin-top: 1.2rem;    /* Breathing room between AURA and subtitle */
+  margin-bottom: 0.5rem; /* Pulls subtitle close to Explore Marketplace button */
   line-height: 1.6;
   opacity: 0;
   max-width: 360px;
