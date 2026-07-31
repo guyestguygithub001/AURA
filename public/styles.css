@@ -1250,7 +1250,7 @@ body.light-theme .onboarding-modal select {
 .landing-overlay .landing-subtitle {
   font-size: 0.95rem;
   color: #52525b !important;
-  margin-bottom: 3rem;
+  margin-bottom: 1.5rem; /* Reduced gap before enter CTA button */
   line-height: 1.6;
   opacity: 0;
   animation: fadeInSubtitle 1.2s cubic-bezier(0.16, 1, 0.3, 1) 0.4s forwards;
