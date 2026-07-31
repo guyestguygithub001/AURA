@@ -45,6 +45,16 @@ window.enterAURAStorefront = function() {
   }
 };
 
+window.exitAURAStorefront = function() {
+  const hero = document.getElementById('landing-hero-view');
+  if (hero) {
+    sessionStorage.removeItem('aura_landing_viewed');
+    hero.style.display = 'flex';
+    hero.offsetHeight; // Force browser reflow to reset transitions
+    hero.classList.remove('fade-out');
+  }
+};
+
 // Setup Listeners
 function setupEventListeners() {
   const personaSelect = document.getElementById('persona-select');
