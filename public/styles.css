@@ -1158,10 +1158,10 @@ body.light-theme .onboarding-modal select {
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  gap: 1rem;          /* Tight column gap - text sits directly beside the boy */
+  gap: 0.5rem;        /* Minimal gap — text block hugs the illustration */
   max-width: 1100px;
   width: 90%;
-  padding: 2rem;
+  padding: 1rem 0.5rem;
   text-align: center;
   transform-style: preserve-3d;
 }
@@ -1170,13 +1170,7 @@ body.light-theme .onboarding-modal select {
   display: flex;
   flex-direction: column;
   align-items: center;
-}
-.landing-logo-container {
-  margin-bottom: 0; /* No extra gap — divider handles spacing */
-  transform-style: preserve-3d;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  gap: 0; /* No gap between children — subtitle sits flush under AURA */
 }
 
 /* Parallax wrapper tracking real-time cursor offsets */
@@ -1222,42 +1216,67 @@ body.light-theme .onboarding-modal select {
   transform: translate3d(var(--parallax-x, 0px), var(--parallax-y, 0px), 0) scale(0.92) translateY(-40px);
 }
 
-/* Typography contrast settings for white layout */
+/* ── AURA Title: Rich Cinematic Motion Graphic Animation ── */
 .landing-overlay .landing-title {
   font-family: var(--font-header);
   font-size: 5.5rem;
   font-weight: 800;
-  letter-spacing: 12px;
+  letter-spacing: 20px;
   text-transform: uppercase;
   color: #09090b !important;
   line-height: 1;
+  margin-bottom: 0;   /* Zero gap — subtitle snaps directly below */
+  margin-top: 0;
   transform-style: preserve-3d;
-  animation: blurInTitle 1.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  position: relative;
+  overflow: hidden;
+  /* Stage 1: letters slam in from blur/scale. Stage 2: breathing float loop */
+  animation:
+    auraReveal 1.4s cubic-bezier(0.16, 1, 0.3, 1) forwards,
+    auraFloat  4s  cubic-bezier(0.45, 0, 0.55, 1) 1.6s infinite alternate;
 }
-
-/* Compact divider — tightly couples AURA heading to text below */
-.landing-overlay .landing-divider {
-  width: 50px;
-  height: 1px;
-  background-color: rgba(9, 9, 11, 0.15) !important;
-  margin: 0.5rem auto 0.75rem auto;
-  transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+/* Shimmer streak overlay that sweeps across AURA after reveal */
+.landing-overlay .landing-title::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    110deg,
+    transparent 30%,
+    rgba(255,255,255,0.55) 50%,
+    transparent 70%
+  );
+  background-size: 200% 100%;
+  background-position: -100% 0;
+  animation: auraShimmer 2.8s cubic-bezier(0.4, 0, 0.2, 1) 1.5s infinite;
+  pointer-events: none;
 }
-.landing-overlay .landing-content:hover .landing-divider {
-  width: 100px;
+@keyframes auraReveal {
+  0%   { opacity: 0; letter-spacing: 30px; filter: blur(18px); transform: translateY(10px); }
+  60%  { opacity: 1; filter: blur(0px);   }
+  100% { opacity: 1; letter-spacing: 20px; filter: blur(0px); transform: translateY(0);   }
+}
+@keyframes auraFloat {
+  0%   { transform: translateY(0px);  letter-spacing: 20px; }
+  100% { transform: translateY(-5px); letter-spacing: 22px; }
+}
+@keyframes auraShimmer {
+  0%   { background-position: -100% 0; opacity: 0; }
+  10%  { opacity: 1; }
+  80%  { background-position: 200% 0; opacity: 1; }
+  100% { background-position: 200% 0; opacity: 0; }
 }
 
 .landing-overlay .landing-subtitle {
   font-size: 0.95rem;
   color: #52525b !important;
-  margin-bottom: 1.5rem;
+  margin-top: 0.25rem;   /* Minimal breathing room — sits flush under AURA */
+  margin-bottom: 1.4rem;
   line-height: 1.6;
   opacity: 0;
-  max-width: 440px;   /* Clean readable width constraints */
-  text-align: center; /* Center align text lines */
-  margin-left: auto;
-  margin-right: auto; /* Center block container */
-  animation: fadeInSubtitle 1.2s cubic-bezier(0.16, 1, 0.3, 1) 0.4s forwards;
+  max-width: 360px;
+  text-align: center;
+  animation: fadeInSubtitle 1.2s cubic-bezier(0.16, 1, 0.3, 1) 0.6s forwards;
 }
 
 /* Continuous breathing button glow */
