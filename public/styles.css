@@ -1404,3 +1404,102 @@ body.light-theme .onboarding-modal select {
 .logo-back-btn:active {
   transform: scale(0.9);
 }
+
+/* Accentuated vector motion graphics around AURA title */
+.landing-logo-container {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 5rem 3rem;
+  transform-style: preserve-3d;
+}
+
+.logo-motion-graphic {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 340px;
+  height: 340px;
+  pointer-events: none;
+  z-index: -1;
+  opacity: 0.16;
+  transition: var(--transition);
+}
+
+/* Adapt opacity for Light Theme (White Background) to keep it clean */
+body.light-theme .logo-motion-graphic {
+  opacity: 0.09;
+}
+
+/* Technical Draft Crosshair Lines */
+.vector-axis {
+  position: absolute;
+  background-color: var(--text);
+  opacity: 0.25;
+}
+.vector-axis.axis-h {
+  top: 50%;
+  left: -20px;
+  width: 380px;
+  height: 1px;
+  background-image: linear-gradient(to right, var(--text) 50%, transparent 50%);
+  background-size: 8px 1px;
+  background-color: transparent;
+}
+.vector-axis.axis-v {
+  left: 50%;
+  top: -20px;
+  height: 380px;
+  width: 1px;
+  background-image: linear-gradient(to bottom, var(--text) 50%, transparent 50%);
+  background-size: 1px 8px;
+  background-color: transparent;
+}
+
+/* Orbiting Rings */
+.orbit-ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  border: 1px solid var(--text);
+  border-radius: 50%;
+}
+.orbit-ring.orbit-ring-inner {
+  width: 180px;
+  height: 180px;
+  border-style: solid;
+  opacity: 0.35;
+  animation: rotateClockwise 28s linear infinite;
+}
+.orbit-ring.orbit-ring-outer {
+  width: 250px;
+  height: 250px;
+  border-style: dashed;
+  opacity: 0.22;
+  animation: rotateCounterClockwise 38s linear infinite;
+}
+
+/* Technical Draft Corner Crop Marks */
+.draft-corner {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border: 1px solid var(--text);
+  opacity: 0.35;
+}
+.draft-corner.tc { top: 0; left: 0; border-right: none; border-bottom: none; }
+.draft-corner.tr { top: 0; right: 0; border-left: none; border-bottom: none; }
+.draft-corner.bc { bottom: 0; left: 0; border-right: none; border-top: none; }
+.draft-corner.br { bottom: 0; right: 0; border-left: none; border-top: none; }
+
+@keyframes rotateClockwise {
+  from { transform: translate(-50%, -50%) rotate(0deg); }
+  to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+@keyframes rotateCounterClockwise {
+  from { transform: translate(-50%, -50%) rotate(0deg); }
+  to { transform: translate(-50%, -50%) rotate(-360deg); }
+}
