@@ -1162,18 +1162,21 @@ body.light-theme .onboarding-modal select {
   max-width: 1100px;
   width: 90%;
   padding: 2rem;
-  text-align: left; /* Left align typography for editor landing layout */
+  text-align: right; /* Right align typography for balanced side-by-side layout */
   transform-style: preserve-3d;
 }
 .landing-text-block {
   flex: 1.2;
   display: flex;
   flex-direction: column;
-  align-items: flex-start; /* Left align content elements */
+  align-items: flex-end; /* Flush elements to the right edge */
 }
 .landing-logo-container {
   margin-bottom: 2rem;
   transform-style: preserve-3d;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end; /* Align title and divider to the right */
 }
 
 /* Parallax wrapper tracking real-time cursor offsets */
@@ -1232,11 +1235,12 @@ body.light-theme .onboarding-modal select {
   animation: blurInTitle 1.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
+/* Right align divider under logo */
 .landing-overlay .landing-divider {
   width: 60px;
   height: 1px;
   background-color: rgba(9, 9, 11, 0.15) !important;
-  margin: 1.5rem 0 0 0; /* Left align divider */
+  margin: 1.5rem 0 0 auto; /* Right align divider */
   transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .landing-overlay .landing-content:hover .landing-divider {
