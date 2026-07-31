@@ -1162,21 +1162,21 @@ body.light-theme .onboarding-modal select {
   max-width: 1100px;
   width: 90%;
   padding: 2rem;
-  text-align: right; /* Right align typography for balanced side-by-side layout */
+  text-align: center; /* Center align typography for balanced layout */
   transform-style: preserve-3d;
 }
 .landing-text-block {
   flex: 1.2;
   display: flex;
   flex-direction: column;
-  align-items: flex-end; /* Flush elements to the right edge */
+  align-items: center; /* Center elements in column */
 }
 .landing-logo-container {
   margin-bottom: 2rem;
   transform-style: preserve-3d;
   display: flex;
   flex-direction: column;
-  align-items: flex-end; /* Align title and divider to the right */
+  align-items: center; /* Center title and divider */
 }
 
 /* Parallax wrapper tracking real-time cursor offsets */
@@ -1235,12 +1235,12 @@ body.light-theme .onboarding-modal select {
   animation: blurInTitle 1.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* Right align divider under logo */
+/* Center align divider under logo */
 .landing-overlay .landing-divider {
   width: 60px;
   height: 1px;
   background-color: rgba(9, 9, 11, 0.15) !important;
-  margin: 1.5rem 0 0 auto; /* Right align divider */
+  margin: 1.5rem auto 0 auto; /* Center align divider */
   transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .landing-overlay .landing-content:hover .landing-divider {
@@ -1254,9 +1254,9 @@ body.light-theme .onboarding-modal select {
   line-height: 1.6;
   opacity: 0;
   max-width: 440px;   /* Clean readable width constraints */
-  text-align: right;  /* Right align individual text lines */
-  margin-left: auto;  /* Flush block rightward */
-  margin-right: 0;
+  text-align: center; /* Center align text lines */
+  margin-left: auto;
+  margin-right: auto; /* Center block container */
   animation: fadeInSubtitle 1.2s cubic-bezier(0.16, 1, 0.3, 1) 0.4s forwards;
 }
 
