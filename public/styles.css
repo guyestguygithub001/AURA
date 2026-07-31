@@ -1136,7 +1136,8 @@ body.light-theme .onboarding-modal select {
   left: 0;
   width: 100vw;
   height: 100vh;
-  background-color: var(--bg);
+  background-color: #ffffff !important; /* Pure, solid white background, completely opaque */
+  color: #09090b;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1164,162 +1165,71 @@ body.light-theme .onboarding-modal select {
   transform-style: preserve-3d;
 }
 
-/* Cinematic 3D Background Container */
-.cinema-3d-container {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 1;
-  overflow: hidden;
-  perspective: 1200px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  pointer-events: none;
-  transform-style: preserve-3d;
-}
-
-/* Pulsing Ambient Glow */
-@keyframes glowPulse {
-  0%, 100% { opacity: 0.12; transform: scale(1) translate(-50%, -50%); }
-  50% { opacity: 0.22; transform: scale(1.15) translate(-48%, -48%); }
-}
-.cinema-glow {
+/* Animated Faded Shopping Illustration (Background Accent) */
+.landing-overlay .illustration-container {
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 600px;
-  height: 600px;
-  background: radial-gradient(circle, rgba(255,255,255,0.08) 0%, rgba(0,0,0,0) 70%);
-  filter: blur(80px);
+  transform: translate(-50%, -50%);
+  width: 480px;
+  height: 480px;
   z-index: 1;
   pointer-events: none;
-  animation: glowPulse 8s infinite ease-in-out;
+  opacity: 0.15; /* Clean faded cartoon backdrop */
+  mix-blend-mode: multiply;
+  animation: floatIllustration 10s infinite ease-in-out;
+  transition: opacity 1s var(--transition), transform 1s var(--transition);
 }
 
-/* Floating 3D Cards */
-.cinema-card {
-  position: absolute;
-  border: 1px solid rgba(255, 255, 255, 0.03);
-  background: rgba(255, 255, 255, 0.005);
-  backdrop-filter: blur(2px);
-  border-radius: 12px;
-  transform-style: preserve-3d;
-  opacity: 0.18;
-}
-
-@keyframes floatLeftCard {
-  0%, 100% { transform: translate3d(-260px, -60px, -200px) rotateY(-25deg) rotateX(15deg); }
-  50% { transform: translate3d(-280px, -40px, -220px) rotateY(-15deg) rotateX(5deg); }
-}
-.cinema-card.card-left {
-  width: 180px;
-  height: 260px;
-  animation: floatLeftCard 12s infinite ease-in-out;
-  z-index: 2;
-}
-
-@keyframes floatRightCard {
-  0%, 100% { transform: translate3d(260px, 80px, -150px) rotateY(30deg) rotateX(-10deg); }
-  50% { transform: translate3d(280px, 60px, -170px) rotateY(15deg) rotateX(-20deg); }
-}
-.cinema-card.card-right {
-  width: 200px;
-  height: 280px;
-  animation: floatRightCard 14s infinite ease-in-out;
-  z-index: 2;
-}
-
-@keyframes floatCenterCard {
-  0%, 100% { transform: translate3d(0, 0, -80px) rotateY(12deg) rotateX(8deg); }
-  50% { transform: translate3d(0, -15px, -100px) rotateY(-12deg) rotateX(-8deg); }
-}
-.cinema-card.card-center {
-  width: 340px;
-  height: 440px;
-  animation: floatCenterCard 16s infinite ease-in-out;
-  z-index: 1;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.01) 0%, rgba(255, 255, 255, 0.002) 100%);
-  border-color: rgba(255, 255, 255, 0.06);
-  padding: 1.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.cinema-card-inner {
+.landing-overlay .happy-shopper-img {
   width: 100%;
   height: 100%;
-  border: 1px dashed rgba(255, 255, 255, 0.03);
-  border-radius: 8px;
-  position: relative;
-  transform: translateZ(35px); /* Stereoscopic 3D pop! */
+  object-fit: cover;
+  border-radius: 50%;
 }
 
-/* Minimalist abstract grid texture */
-.wireframe-grid {
-  position: absolute;
-  top: 10%;
-  left: 10%;
-  width: 80%;
-  height: 80%;
-  background-image: linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
-                    linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
-  background-size: 20px 20px;
-  transform: translateZ(20px);
+@keyframes floatIllustration {
+  0%, 100% {
+    transform: translate(-50%, -50%) translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translate(-50%, -50%) translateY(-15px) rotate(2deg);
+  }
 }
 
-/* Blur-in cinematic title entrance */
-@keyframes blurInTitle {
-  0% {
-    opacity: 0;
-    filter: blur(16px);
-    transform: scale(0.95) translateZ(-50px);
-    letter-spacing: 24px;
-  }
-  100% {
-    opacity: 1;
-    filter: blur(0);
-    transform: scale(1) translateZ(0);
-    letter-spacing: 12px;
-  }
+/* Shift out illustration on explore trigger click */
+.landing-overlay.shifting .illustration-container {
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(1.15) translateY(-50px);
 }
-.landing-title {
+
+/* Typography contrast settings for white layout */
+.landing-overlay .landing-title {
   font-family: var(--font-header);
   font-size: 5.5rem;
   font-weight: 800;
   letter-spacing: 12px;
   text-transform: uppercase;
-  color: var(--text);
+  color: #09090b !important;
   line-height: 1;
   transform-style: preserve-3d;
   animation: blurInTitle 1.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-.landing-divider {
+.landing-overlay .landing-divider {
   width: 60px;
   height: 1px;
-  background-color: var(--border-focus);
+  background-color: rgba(9, 9, 11, 0.15) !important;
   margin: 1.5rem auto 0 auto;
   transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
 }
-.landing-content:hover .landing-divider {
+.landing-overlay .landing-content:hover .landing-divider {
   width: 120px;
 }
 
-@keyframes fadeInSubtitle {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 0.8;
-  }
-}
-.landing-subtitle {
+.landing-overlay .landing-subtitle {
   font-size: 0.95rem;
-  color: var(--text-muted);
+  color: #52525b !important;
   margin-bottom: 3rem;
   line-height: 1.6;
   opacity: 0;
@@ -1327,20 +1237,20 @@ body.light-theme .onboarding-modal select {
 }
 
 /* Continuous breathing button glow */
-@keyframes pulseBtn {
+@keyframes pulseBtnLight {
   0%, 100% {
     transform: translateY(0);
-    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.08);
+    box-shadow: 0 0 0 0 rgba(9, 9, 11, 0.06);
   }
   50% {
     transform: translateY(-2px);
-    box-shadow: 0 0 24px 6px rgba(255, 255, 255, 0.06);
+    box-shadow: 0 0 20px 5px rgba(9, 9, 11, 0.05);
   }
 }
-.landing-enter-btn {
-  background: var(--text);
-  color: var(--bg);
-  border: 1px solid var(--text);
+.landing-overlay .landing-enter-btn {
+  background: #09090b !important; /* Solid high-contrast black button */
+  color: #ffffff !important;     /* White text */
+  border: 1px solid #09090b !important;
   padding: 0.85rem 2.25rem;
   border-radius: 4px;
   font-family: var(--font-header);
@@ -1351,34 +1261,34 @@ body.light-theme .onboarding-modal select {
   align-items: center;
   gap: 0.75rem;
   transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-  animation: pulseBtn 3s infinite ease-in-out;
+  animation: pulseBtnLight 3s infinite ease-in-out;
 }
-.landing-enter-btn:hover {
-  animation: none; /* Override standard pulse on mouse hover */
-  background: transparent;
-  color: var(--text);
-  border-color: var(--border-focus);
+.landing-overlay .landing-enter-btn:hover {
+  animation: none;
+  background: transparent !important;
+  color: #09090b !important;
+  border-color: #09090b !important;
   transform: translateY(-4px) scale(1.02);
-  box-shadow: 0 10px 30px rgba(255, 255, 255, 0.05);
+  box-shadow: 0 10px 30px rgba(9, 9, 11, 0.04);
 }
-.landing-enter-btn i {
+.landing-overlay .landing-enter-btn i {
   transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
-.landing-enter-btn:hover i {
+.landing-overlay .landing-enter-btn:hover i {
   transform: translateX(6px);
 }
-.landing-enter-btn:active {
+.landing-overlay .landing-enter-btn:active {
   transform: scale(0.96) translateY(0);
 }
 
-.landing-footer {
+.landing-overlay .landing-footer {
   position: absolute;
   bottom: 2.5rem;
   font-size: 0.65rem;
   text-transform: uppercase;
   letter-spacing: 2px;
-  color: var(--text-muted);
-  opacity: 0.5;
+  color: #71717a !important;
+  opacity: 0.6;
   z-index: 5;
 }
 
@@ -1502,4 +1412,28 @@ body.light-theme .logo-motion-graphic {
 @keyframes rotateCounterClockwise {
   from { transform: translate(-50%, -50%) rotate(0deg); }
   to { transform: translate(-50%, -50%) rotate(-360deg); }
+}
+
+/* Explicit vector graphic color mapping for white background overlay */
+.landing-overlay .logo-motion-graphic {
+  opacity: 0.08;
+}
+.landing-overlay .orbit-ring {
+  border-color: #09090b;
+}
+.landing-overlay .orbit-ring.orbit-ring-inner {
+  opacity: 0.12;
+}
+.landing-overlay .orbit-ring.orbit-ring-outer {
+  opacity: 0.06;
+}
+.landing-overlay .vector-axis.axis-h {
+  background-image: linear-gradient(to right, #09090b 50%, transparent 50%);
+}
+.landing-overlay .vector-axis.axis-v {
+  background-image: linear-gradient(to bottom, #09090b 50%, transparent 50%);
+}
+.landing-overlay .draft-corner {
+  border-color: #09090b;
+  opacity: 0.12;
 }
